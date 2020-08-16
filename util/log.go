@@ -1,8 +1,12 @@
 package util
 
 import (
+	"bufio"
 	"fmt"
+	"io"
+	"log"
 	"os"
+	"os/exec"
 	"sync"
 	"time"
 )
@@ -22,4 +26,85 @@ func NewTempLogger() (*os.File, error) {
 		}
 	}
 	return file, nil
+}
+
+func GetLogger(forComponent string) (*log.Logger, error) {
+	debug := os.Getenv("RMCK_DEBUG")
+	flags := log.Ldate | log.Ltime
+	if debug != "" {
+		return log.New(os.Stdout, forComponent, flags), nil
+	}
+
+	rmckLogPath := os.Getenv("RMCK_LOG_FILE")
+	if rmckLogPath != "" {
+		stat, err := os.Stat(rmckLogPath)
+		if err == nil && stat.IsDir() {
+			return nil, fmt.Errorf("cannot log to %s: directory", rmckLogPath)
+		} else if err != nil {
+			os.Remove(rmckLogPath)
+		}
+
+		file, err := os.Create(rmckLogPath)
+		if err != nil {
+			return nil, err
+		}
+
+		return log.New(file, forComponent, flags), nil
+	}
+
+	file, err := NewTempLogger()
+	if err != nil {
+		return nil, err
+	}
+
+	return log.New(file, forComponent, flags), nil
+}
+
+func LogProcess(cmd *exec.Cmd, log *log.Logger) error {
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		stdoutCh := lines(stdout)
+		stderrCh := lines(stderr)
+		keepLogging := true
+		for keepLogging {
+			select {
+			case line, ok := <-stdoutCh:
+				if !ok {
+					keepLogging = false
+					break
+				}
+				log.Println(line)
+			case line, ok := <-stderrCh:
+				if !ok {
+					keepLogging = false
+					break
+				}
+				log.Println(line)
+			}
+		}
+	}()
+	return nil
+}
+
+func lines(stream io.Reader) <-chan string {
+	ch := make(chan string)
+
+	go func() {
+		scanner := bufio.NewScanner(stream)
+		for scanner.Scan() {
+			ch <- scanner.Text()
+		}
+		close(ch)
+	}()
+
+	return ch
 }

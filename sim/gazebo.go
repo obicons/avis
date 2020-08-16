@@ -31,11 +31,20 @@ type Gazebo struct {
 func (gazebo *Gazebo) Start() error {
 	var cmd *exec.Cmd
 	worldPath := path.Join(gazebo.ArduPilotGazebo, "worlds/iris_arducopter_runway.world")
-	cmd = exec.Command(gazebo.ExecutablePath, worldPath, "--pause")
+	cmd = exec.Command(gazebo.ExecutablePath, "--pause", worldPath)
 	cmd.Dir = gazebo.ArduPilotGazebo
 	cmd.Env = append(os.Environ(), []string{"DISPLAY=:0", "LC_ALL=C"}...)
-	cmd.Stdout = gazebo.Logger.Writer()
-	cmd.Stderr = gazebo.Logger.Writer()
+
+	logging, err := util.GetLogger("gazebo")
+	if err != nil {
+		return err
+	}
+
+	gazebo.Logger = logging
+	if err = util.LogProcess(cmd, logging); err != nil {
+		return err
+	}
+
 	if err := cmd.Start(); err != nil {
 		return err
 	}
@@ -45,6 +54,10 @@ func (gazebo *Gazebo) Start() error {
 
 /// implements sim.Sim
 func (gazebo *Gazebo) Stop(ctx context.Context) error {
+	if gazebo.Cmd.ProcessState != nil && gazebo.Cmd.ProcessState.Exited() {
+		return fmt.Errorf("Cannot stop gazebo: already existed with status %d", gazebo.Cmd.ProcessState.ExitCode())
+	}
+
 	if err := gazebo.Cmd.Process.Signal(syscall.SIGINT); err != nil {
 		return err
 	}
@@ -153,19 +166,7 @@ func NewGazeboFromEnv() (*Gazebo, error) {
 		return nil, fmt.Errorf("error: stat(%s): %s", ardupilotGazebo, err)
 	}
 
-	var file *os.File
-	logPath := os.Getenv("RMCK_LOG_FILE")
-	if logPath == "" {
-		file, err = util.NewTempLogger()
-	} else {
-		file, err = os.Create(logPath)
-	}
-	if err != nil {
-		return nil, err
-	}
-
 	gazebo := new(Gazebo)
-	gazebo.Logger = log.New(file, "gazebo", 0)
 	gazebo.ExecutablePath = gazeboPath
 	gazebo.ArduPilotGazebo = ardupilotGazebo
 	gazebo.GazeboTimePath = path.Join(os.Getenv("HOME"), ".gazebo_time")

@@ -1,6 +1,8 @@
 package platforms
 
+import "context"
+
 type System interface {
-	Start()
-	Stop()
+	Start() error
+	Stop(ctx context.Context) error
 }

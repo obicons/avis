@@ -2,7 +2,6 @@ package sim
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -44,6 +43,10 @@ func TestGazeboFunctional(t *testing.T) {
 	defer cc()
 	gazebo.Step(ctx)
 
-	fmt.Println("sleep 30s")
-	time.Sleep(30 * time.Second)
+	ctx, cc = context.WithTimeout(context.Background(), time.Second*5)
+	defer cc()
+	err = gazebo.Stop(ctx)
+	if err != nil {
+		t.Fatalf("gazebo could not stop: %s", err)
+	}
 }
