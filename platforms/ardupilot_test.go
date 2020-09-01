@@ -41,9 +41,14 @@ func TestNewArduPilotFromEnvBadPath(t *testing.T) {
 }
 
 func TestArduPilotFunctional(t *testing.T) {
-	ardupilot, err := NewArduPilotFromEnv()
+	system, err := NewArduPilotFromEnv()
 	if err != nil {
 		t.Fatalf("NewArduPilotFromEnv returned an unexpected error: %s", err)
+	}
+
+	ardupilot, ok := system.(*ArduPilot)
+	if !ok {
+		t.Fatal("Error: NewArduPilotFromEnv did not return an instance of ArduPilot")
 	}
 
 	err = ardupilot.Start()

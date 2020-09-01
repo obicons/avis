@@ -51,6 +51,8 @@ func TestFunctionalPX4(t *testing.T) {
 		t.Fatal("PX4 does not appear to have started")
 	}
 
+	time.Sleep(time.Second * 10)
+
 	if err = px4.Stop(context.Background()); err != nil {
 		t.Fatalf("px4.Stop() returned an unexpected error: %s", err)
 	}

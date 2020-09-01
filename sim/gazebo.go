@@ -18,22 +18,33 @@ import (
 
 type Gazebo struct {
 	ExecutablePath  string
-	ArduPilotGazebo string
+	Config          *GazeboConfig
 	Logger          *log.Logger
 	Cmd             *exec.Cmd
-	GazeboTimePath  string
-	GazeboStepPath  string
-	GazeboPosPath   string
+	TimePath        string
+	StepPath        string
+	PositionPath    string
 	TotalIterations int64
 }
 
-/// implements sim.Sim
+type GazeboConfig struct {
+	// contains the world configuration
+	WorldPath string
+
+	// where to execute Gazebo
+	WorkDir string
+
+	// Any additional environment variables
+	Env []string
+}
+
+// implements sim.Sim
 func (gazebo *Gazebo) Start() error {
 	var cmd *exec.Cmd
-	worldPath := path.Join(gazebo.ArduPilotGazebo, "worlds/iris_arducopter_runway.world")
-	cmd = exec.Command(gazebo.ExecutablePath, "--pause", worldPath)
-	cmd.Dir = gazebo.ArduPilotGazebo
+	cmd = exec.Command(gazebo.ExecutablePath, "--pause", gazebo.Config.WorldPath)
+	cmd.Dir = gazebo.Config.WorkDir
 	cmd.Env = append(os.Environ(), []string{"DISPLAY=:0", "LC_ALL=C"}...)
+	cmd.Env = append(cmd.Env, gazebo.Config.Env...)
 
 	logging, err := util.GetLogger("gazebo")
 	if err != nil {
@@ -52,7 +63,7 @@ func (gazebo *Gazebo) Start() error {
 	return nil
 }
 
-/// implements sim.Sim
+// implements sim.Sim
 func (gazebo *Gazebo) Stop(ctx context.Context) error {
 	if gazebo.Cmd.ProcessState != nil && gazebo.Cmd.ProcessState.Exited() {
 		return fmt.Errorf("Cannot stop gazebo: already existed with status %d", gazebo.Cmd.ProcessState.ExitCode())
@@ -83,7 +94,7 @@ func (gazebo *Gazebo) Stop(ctx context.Context) error {
 	return gazebo.Cmd.Wait()
 }
 
-/// implements sim.Sim
+// implements sim.Sim
 func (gazebo *Gazebo) SimTime(ctx context.Context) (time.Time, error) {
 	done := ctx.Done()
 	tryToConnect := true
@@ -96,7 +107,7 @@ func (gazebo *Gazebo) SimTime(ctx context.Context) (time.Time, error) {
 			err = ctx.Err()
 			tryToConnect = false
 		default:
-			addr, err := net.Dial("unix", gazebo.GazeboTimePath)
+			addr, err := net.Dial("unix", gazebo.TimePath)
 			if err != nil {
 				time.Sleep(coolOffPeriod)
 				continue
@@ -129,7 +140,7 @@ func (g *Gazebo) Step(ctx context.Context) error {
 			err = ctx.Err()
 			tryToConnect = false
 		default:
-			addr, err := net.Dial("unix", g.GazeboStepPath)
+			addr, err := net.Dial("unix", g.StepPath)
 			if err != nil {
 				continue
 			}
@@ -150,27 +161,17 @@ func (g *Gazebo) Step(ctx context.Context) error {
 	return err
 }
 
-func NewGazeboFromEnv() (*Gazebo, error) {
+func NewGazeboFromEnv(config *GazeboConfig) (*Gazebo, error) {
 	gazeboPath, error := exec.LookPath("gzserver")
 	if error != nil {
 		return nil, fmt.Errorf("error: gzserver not found on PATH")
 	}
 
-	ardupilotGazebo := os.Getenv("ARDUPILOT_GZ_PATH")
-	if ardupilotGazebo == "" {
-		return nil, fmt.Errorf("error: ARDUPILOT_GZ_PATH environment variable not set")
-	}
-
-	_, err := os.Stat(ardupilotGazebo)
-	if err != nil {
-		return nil, fmt.Errorf("error: stat(%s): %s", ardupilotGazebo, err)
-	}
-
 	gazebo := new(Gazebo)
 	gazebo.ExecutablePath = gazeboPath
-	gazebo.ArduPilotGazebo = ardupilotGazebo
-	gazebo.GazeboTimePath = path.Join(os.Getenv("HOME"), ".gazebo_time")
-	gazebo.GazeboStepPath = path.Join(os.Getenv("HOME"), ".gazebo_world_control")
-	gazebo.GazeboPosPath = path.Join(os.Getenv("HOME"), ".gazebo_position")
+	gazebo.Config = config
+	gazebo.TimePath = path.Join(os.Getenv("HOME"), ".gazebo_time")
+	gazebo.StepPath = path.Join(os.Getenv("HOME"), ".gazebo_world_control")
+	gazebo.PositionPath = path.Join(os.Getenv("HOME"), ".gazebo_position")
 	return gazebo, nil
 }
