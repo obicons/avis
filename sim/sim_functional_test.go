@@ -2,6 +2,8 @@ package sim
 
 import (
 	"context"
+	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -9,7 +11,7 @@ import (
 )
 
 func TestGazeboFunctional(t *testing.T) {
-	gazebo, err := NewGazeboFromEnv()
+	gazebo, err := NewGazeboFromEnv(testingConfig(t))
 	if err != nil {
 		t.Fatalf("could not get a gazebo from environment: %s", err)
 	}
@@ -49,4 +51,17 @@ func TestGazeboFunctional(t *testing.T) {
 	if err != nil {
 		t.Fatalf("gazebo could not stop: %s", err)
 	}
+}
+
+func testingConfig(t *testing.T) *GazeboConfig {
+	t.Helper()
+	gazeboPath := os.Getenv("ARDUPILOT_GZ_PATH")
+	if gazeboPath == "" {
+		t.Fatal("Error: ARDUPILOT_GZ_PATH not set")
+	}
+	config := GazeboConfig{
+		WorldPath: path.Join(gazeboPath, "worlds/iris_arducopter_runway.world"),
+		WorkDir:   gazeboPath,
+	}
+	return &config
 }

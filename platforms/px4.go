@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path"
 
+	"github.com/obicons/rmck/sim"
 	"github.com/obicons/rmck/util"
 )
 
@@ -37,6 +38,7 @@ func (px4 *PX4) Start() error {
 	romfsPath := path.Join(px4.srcPath, "ROMFS/px4fmu_common")
 	rcPath := path.Join(px4.srcPath, "etc/init.d-posix/rcS")
 	testDataPath := path.Join(px4.srcPath, "test_data")
+	rootFs := path.Join(px4.srcPath, "tmp/rootfs")
 	if _, err := os.Stat(binaryPath); err != nil {
 		return fmt.Errorf("error: Start(): build px4")
 	}
@@ -50,10 +52,10 @@ func (px4 *PX4) Start() error {
 		"-t", // set test data
 		testDataPath,
 	)
-	cmd.Dir = px4.srcPath
+	cmd.Dir = rootFs
 	cmd.Env = px4Environ()
+	cmd.Stdin = os.Stdin
 
-	// do we need cmd.Stdin to be set?
 	logging, err := util.GetLogger("px4")
 	if err != nil {
 		return err
@@ -77,6 +79,29 @@ func (px4 *PX4) Stop(ctx context.Context) error {
 	return util.GracefulStop(px4.cmd, ctx)
 }
 
+// implements System
+func (px4 *PX4) GetGazeboConfig() (*sim.GazeboConfig, error) {
+	worldfilePath := path.Join(px4.srcPath, "Tools/sitl_gazebo/iris.world")
+	if _, err := os.Stat(worldfilePath); err != nil {
+		return nil, fmt.Errorf("GetGazeboConfig(): %s", err)
+	}
+
+	pluginPath := path.Join(px4.srcPath, "build_gazebo")
+	modelPath := path.Join(px4.srcPath, "Tools/sitl_gazebo/models")
+	ldLibraryPath := path.Join(px4.srcPath, "build_gazebo")
+
+	conf := sim.GazeboConfig{
+		WorldPath: worldfilePath,
+		Env: []string{
+			fmt.Sprintf("GAZEBO_PLUGIN_PATH=%s", pluginPath),
+			fmt.Sprintf("GAZEBO_MODEL_PATH=%s", modelPath),
+			fmt.Sprintf("LD_LIBRARY_PATH=%s", ldLibraryPath),
+		},
+	}
+	return &conf, nil
+}
+
+// returns environment variables needed by PX4
 func px4Environ() []string {
 	env := os.Environ()
 	env = append(
@@ -86,6 +111,7 @@ func px4Environ() []string {
 		"PX4_HOME_LON=149.165230",
 		"PX4_HOME_ALT=584",
 		"DISPLAY=:0",
+		"PX4_SIM_MODEL=iris",
 	)
 	return env
 }

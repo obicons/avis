@@ -10,14 +10,16 @@ import (
 )
 
 func main() {
-	gazebo, err := sim.NewGazeboFromEnv()
-	if err != nil {
-		log.Fatalf("Could not get a Gazebo instance: %s", err)
-	}
-
 	ardupilot, err := platforms.NewArduPilotFromEnv()
 	if err != nil {
 		log.Fatalf("Could not get an ArduPilot instance: %s", err)
+	}
+
+	config, _ := ardupilot.GetGazeboConfig()
+
+	gazebo, err := sim.NewGazeboFromEnv(config)
+	if err != nil {
+		log.Fatalf("Could not get a Gazebo instance: %s", err)
 	}
 
 	err = gazebo.Start()
@@ -31,6 +33,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not start ArduPilot: %s", err)
 	}
+
+	gazebo.Step(context.Background())
 
 	time.Sleep(time.Second * 120)
 
