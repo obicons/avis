@@ -53,8 +53,9 @@ func TestArduPilotFunctional(t *testing.T) {
 
 	startTime := time.Now()
 	isRunning := false
-	for !isRunning && time.Now().Sub(startTime) < time.Second*5 {
+	for !isRunning && time.Now().Sub(startTime) < time.Second*10 {
 		isRunning, _ = util.IsRunning("arducopter")
+		time.Sleep(time.Millisecond * 250)
 	}
 	if !isRunning {
 		t.Fatal("ArduCopter does not appear to have started")

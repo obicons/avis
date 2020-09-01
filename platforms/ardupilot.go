@@ -6,8 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"syscall"
-	"time"
 
 	"github.com/obicons/rmck/util"
 )
@@ -40,7 +38,7 @@ func NewArduPilotFromEnv() (*ArduPilot, error) {
 	return &ardupilot, nil
 }
 
-/// implements System
+// implements System
 func (a *ArduPilot) Start() error {
 	workDir := path.Join(a.srcPath, "Tools/autotest/")
 
@@ -74,29 +72,7 @@ func (a *ArduPilot) Start() error {
 	return err
 }
 
-/// implements System
+// implements System
 func (a *ArduPilot) Stop(ctx context.Context) error {
-	if err := a.cmd.Process.Signal(syscall.SIGINT); err != nil {
-		return err
-	}
-	nctx, cc := context.WithTimeout(ctx, time.Second)
-	defer cc()
-	if err := util.WaitWithContext(nctx, a.cmd); err == nil {
-		return nil
-	}
-
-	if err := a.cmd.Process.Signal(syscall.SIGTERM); err != nil {
-		return err
-	}
-	nctx, cc = context.WithTimeout(ctx, time.Second)
-	defer cc()
-	if err := util.WaitWithContext(nctx, a.cmd); err == nil {
-		return nil
-	}
-
-	if err := a.cmd.Process.Signal(syscall.SIGKILL); err != nil {
-		return err
-	}
-
-	return a.cmd.Wait()
+	return util.GracefulStop(a.cmd, ctx)
 }
