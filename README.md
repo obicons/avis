@@ -9,8 +9,17 @@ Just run `make`.
 Run `bin/rmck`. The following environment variables must be set:
 - `ARDUPILOT_SRC_PATH` - the path to the source code of ArduPilot
 - `ARDUPILOT_GZ_PATH` - the path to the source code of ArduPilot's Gazebo plugin
+- `PX4_PATH` - the path to the source code of PX4
 
-Optionally, `DEBUG` can be set to any value to enable verbose output.
+Optionally, `RMCK_DEBUG` can be set to any value to enable verbose output.
+
+## Testing
+
+### Unit Tests
+Run `make test-unit`.
+
+### Functional Tests
+Run `make test-functional`.
 
 ## TODO
 - Provisioning instances of PX4, ArduPilot (see `platforms/`)
