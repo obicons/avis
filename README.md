@@ -22,7 +22,9 @@ Run `make test-unit`.
 Run `make test-functional`.
 
 ## TODO
-- Provisioning instances of PX4, ArduPilot (see `platforms/`)
+- HINJ support:
+  - Read message types
+  - Start hardware server
 - Implementing API gateway (e.g. over unix sockets)
 - Porting Python drivers to use this new API gateway
 - Reimplementing the core checker
