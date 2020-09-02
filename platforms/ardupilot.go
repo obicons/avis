@@ -3,19 +3,26 @@ package platforms
 import (
 	"context"
 	"fmt"
+	"log"
+	"net"
 	"os"
 	"os/exec"
 	"path"
+	"time"
 
 	"github.com/obicons/rmck/sim"
 	"github.com/obicons/rmck/util"
 )
 
 type ArduPilot struct {
-	srcPath       string
-	gazeboSrcPath string
-	cmd           *exec.Cmd
+	srcPath         string
+	gazeboSrcPath   string
+	droneSignalPath string
+	cmd             *exec.Cmd
+	logger          *log.Logger
 }
+
+const droneSignalTimeout = time.Millisecond * 250
 
 func NewArduPilotFromEnv() (System, error) {
 	// get the environment variable
@@ -43,9 +50,19 @@ func NewArduPilotFromEnv() (System, error) {
 		return nil, fmt.Errorf("error: ARDUPILOT_GZ_PATH (%s) must be a dir", gzPath)
 	}
 
+	logger, err := util.GetLogger("ArduPilot Controller")
+	if err != nil {
+		return nil, fmt.Errorf("error: NewArduPilotFromEnv(): %s", err)
+	}
+
+	homedir, _ := os.UserHomeDir()
+	droneSignalPath := path.Join(homedir, ".drone_signal")
+
 	ardupilot := ArduPilot{
-		srcPath:       srcPath,
-		gazeboSrcPath: gzPath,
+		srcPath:         srcPath,
+		gazeboSrcPath:   gzPath,
+		droneSignalPath: droneSignalPath,
+		logger:          logger,
 	}
 	return &ardupilot, nil
 }
@@ -92,8 +109,25 @@ func (a *ArduPilot) Stop(ctx context.Context) error {
 // implements System
 func (a *ArduPilot) GetGazeboConfig() (*sim.GazeboConfig, error) {
 	config := sim.GazeboConfig{
-		WorkDir:   a.gazeboSrcPath,
-		WorldPath: path.Join(a.gazeboSrcPath, "worlds/iris_arducopter_runway.world"),
+		WorkDir:         a.gazeboSrcPath,
+		WorldPath:       path.Join(a.gazeboSrcPath, "worlds/iris_arducopter_runway.world"),
+		PreStepActions:  []sim.StepActions{func() { a.checkDroneSignal(false) }},
+		PostStepActions: []sim.StepActions{func() { a.checkDroneSignal(true) }},
 	}
 	return &config, nil
+}
+
+// connects to the signal the drone is broadcasting
+func (a *ArduPilot) checkDroneSignal(isPostStep bool) {
+	socket, err := net.Dial("unix", a.droneSignalPath)
+	if err != nil {
+		a.logger.Printf("checkDroneSignal: %s\n", err)
+		return
+	}
+	defer socket.Close()
+
+	if isPostStep {
+		resp := make([]byte, 8)
+		socket.Read(resp)
+	}
 }
