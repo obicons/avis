@@ -16,6 +16,8 @@ import (
 	"github.com/obicons/rmck/util"
 )
 
+type StepActions func()
+
 type Gazebo struct {
 	ExecutablePath  string
 	Config          *GazeboConfig
@@ -36,6 +38,12 @@ type GazeboConfig struct {
 
 	// Any additional environment variables
 	Env []string
+
+	// Actions to invoke pre-step
+	PreStepActions []StepActions
+
+	// Actions to invoke post-step
+	PostStepActions []StepActions
 }
 
 // implements sim.Sim
@@ -134,6 +142,7 @@ func (g *Gazebo) Step(ctx context.Context) error {
 	var err error
 	done := ctx.Done()
 	tryToConnect := true
+	g.doPreStep()
 	for tryToConnect {
 		select {
 		case <-done:
@@ -157,8 +166,20 @@ func (g *Gazebo) Step(ctx context.Context) error {
 			tryToConnect = false
 		}
 	}
-
+	g.doPostStep()
 	return err
+}
+
+func (g *Gazebo) doPreStep() {
+	for _, action := range g.Config.PreStepActions {
+		action()
+	}
+}
+
+func (g *Gazebo) doPostStep() {
+	for _, action := range g.Config.PostStepActions {
+		action()
+	}
 }
 
 func NewGazeboFromEnv(config *GazeboConfig) (*Gazebo, error) {
