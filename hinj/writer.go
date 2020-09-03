@@ -52,3 +52,8 @@ func (h *HINJWriter) WriteMessage(msg interface{}) error {
 
 	return nil
 }
+
+func NewHINJWriter(writer io.Writer) *HINJWriter {
+	hw := HINJWriter{writer: writer}
+	return &hw
+}

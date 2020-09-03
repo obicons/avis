@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"syscall"
 	"time"
 
 	"github.com/obicons/rmck/util"
@@ -76,30 +75,7 @@ func (gazebo *Gazebo) Stop(ctx context.Context) error {
 	if gazebo.Cmd.ProcessState != nil && gazebo.Cmd.ProcessState.Exited() {
 		return fmt.Errorf("Cannot stop gazebo: already existed with status %d", gazebo.Cmd.ProcessState.ExitCode())
 	}
-
-	if err := gazebo.Cmd.Process.Signal(syscall.SIGINT); err != nil {
-		return err
-	}
-	nctx, cc := context.WithTimeout(ctx, time.Second)
-	defer cc()
-	if err := util.WaitWithContext(nctx, gazebo.Cmd); err == nil {
-		return nil
-	}
-
-	if err := gazebo.Cmd.Process.Signal(syscall.SIGTERM); err != nil {
-		return err
-	}
-	nctx, cc = context.WithTimeout(ctx, time.Second)
-	defer cc()
-	if err := util.WaitWithContext(nctx, gazebo.Cmd); err == nil {
-		return nil
-	}
-
-	if err := gazebo.Cmd.Process.Signal(syscall.SIGKILL); err != nil {
-		return err
-	}
-
-	return gazebo.Cmd.Wait()
+	return util.GracefulStop(gazebo.Cmd, ctx)
 }
 
 // implements sim.Sim

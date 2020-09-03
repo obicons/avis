@@ -175,3 +175,123 @@ func TestUnitReadMessageSizeError(t *testing.T) {
 		t.Fatalf("readMessageSize() should return an error")
 	}
 }
+
+func TestUnitReadMessageGPS(t *testing.T) {
+	gps := GPSPacket{Instance: 1, SatellitesVisible: 10}
+	size, _ := util.PackedStructSize(&gps)
+	msgBytes := make([]byte, msgPreambleSize+size)
+	msgBytes[0] = byte(GPS)
+	util.HostByteOrder.PutUint32(msgBytes[1:5], uint32(size))
+	util.PackedStructToBytes(msgBytes[5:], &gps)
+	buffer := bytes.NewBuffer(msgBytes)
+	reader := NewHINJReader(buffer)
+	gpsInterface, err := reader.ReadMessage()
+	if err != nil {
+		t.Fatalf("ReadMessage() returned an unexpected error: %s", err)
+	}
+	if realGPS, ok := gpsInterface.(*GPSPacket); !ok {
+		t.Fatalf("ReadMessage() did not return the expected type")
+	} else if realGPS.Instance != 1 || realGPS.SatellitesVisible != 10 {
+		t.Fatalf("ReadMessage() returned a GPS packet with incorrect settings")
+	}
+}
+
+func TestUnitReadMessageAccelerometer(t *testing.T) {
+	accel := AccelerometerPacket{Instance: 1, AccelerationX: 10.0}
+	size, _ := util.PackedStructSize(&accel)
+	msgBytes := make([]byte, msgPreambleSize+size)
+	msgBytes[0] = byte(Accelerometer)
+	util.HostByteOrder.PutUint32(msgBytes[1:5], uint32(size))
+	util.PackedStructToBytes(msgBytes[5:], &accel)
+	buffer := bytes.NewBuffer(msgBytes)
+	reader := NewHINJReader(buffer)
+	accelInterface, err := reader.ReadMessage()
+	if err != nil {
+		t.Fatalf("ReadMessage() returned an unexpected error: %s", err)
+	}
+	if realAccel, ok := accelInterface.(*AccelerometerPacket); !ok {
+		t.Fatalf("ReadMessage() did not return the expected type")
+	} else if realAccel.Instance != 1 || realAccel.AccelerationX != 10.0 {
+		t.Fatalf("ReadMessage() returned an Accelerometer packet with incorrect settings")
+	}
+}
+
+func TestUnitReadMessageGyro(t *testing.T) {
+	gyro := GyroscopePacket{Instance: 1, Z: 2.0}
+	size, _ := util.PackedStructSize(&gyro)
+	msgBytes := make([]byte, msgPreambleSize+size)
+	msgBytes[0] = byte(Gyroscope)
+	util.HostByteOrder.PutUint32(msgBytes[1:5], uint32(size))
+	util.PackedStructToBytes(msgBytes[5:], &gyro)
+	buffer := bytes.NewBuffer(msgBytes)
+	reader := NewHINJReader(buffer)
+	gyroInterface, err := reader.ReadMessage()
+	if err != nil {
+		t.Fatalf("ReadMessage() returned an unexpected error: %s", err)
+	}
+	if realGyro, ok := gyroInterface.(*GyroscopePacket); !ok {
+		t.Fatalf("ReadMessage() did not return the expected type")
+	} else if realGyro.Instance != 1 || realGyro.Z != 2.0 {
+		t.Fatalf("ReadMessage() returned a Gyroscope packet with incorrect settings")
+	}
+}
+
+func TestUnitReadMessageBattery(t *testing.T) {
+	battery := BatteryPacket{Voltage: 1.0, Throttle: 2.0}
+	size, _ := util.PackedStructSize(&battery)
+	msgBytes := make([]byte, msgPreambleSize+size)
+	msgBytes[0] = byte(Battery)
+	util.HostByteOrder.PutUint32(msgBytes[1:5], uint32(size))
+	util.PackedStructToBytes(msgBytes[5:], &battery)
+	buffer := bytes.NewBuffer(msgBytes)
+	reader := NewHINJReader(buffer)
+	batteryInterface, err := reader.ReadMessage()
+	if err != nil {
+		t.Fatalf("ReadMessage() returned an unexpected error: %s", err)
+	}
+	if realBattery, ok := batteryInterface.(*BatteryPacket); !ok {
+		t.Fatalf("ReadMessage() did not return the expected type")
+	} else if realBattery.Voltage != 1.0 || realBattery.Throttle != 2.0 {
+		t.Fatalf("ReadMessage() returned a Battery packet with incorrect settings")
+	}
+}
+
+func TestUnitReadMessageBarometer(t *testing.T) {
+	baro := BarometerPacket{Instance: 1, Temperature: 42.0}
+	size, _ := util.PackedStructSize(&baro)
+	msgBytes := make([]byte, msgPreambleSize+size)
+	msgBytes[0] = byte(Barometer)
+	util.HostByteOrder.PutUint32(msgBytes[1:5], uint32(size))
+	util.PackedStructToBytes(msgBytes[5:], &baro)
+	buffer := bytes.NewBuffer(msgBytes)
+	reader := NewHINJReader(buffer)
+	baroInterface, err := reader.ReadMessage()
+	if err != nil {
+		t.Fatalf("ReadMessage() returned an unexpected error: %s", err)
+	}
+	if realBarometer, ok := baroInterface.(*BarometerPacket); !ok {
+		t.Fatalf("ReadMessage() did not return the expected type")
+	} else if realBarometer.Instance != 1 || realBarometer.Temperature != 42.0 {
+		t.Fatalf("ReadMessage() returned a Barometer packet with incorrect settings")
+	}
+}
+
+func TestUnitReadMessageMode(t *testing.T) {
+	mode := ModePacket{Mode: 42}
+	size, _ := util.PackedStructSize(&mode)
+	msgBytes := make([]byte, msgPreambleSize+size)
+	msgBytes[0] = byte(Mode)
+	util.HostByteOrder.PutUint32(msgBytes[1:5], uint32(size))
+	util.PackedStructToBytes(msgBytes[5:], &mode)
+	buffer := bytes.NewBuffer(msgBytes)
+	reader := NewHINJReader(buffer)
+	modeInterface, err := reader.ReadMessage()
+	if err != nil {
+		t.Fatalf("ReadMessage() returned an unexpected error: %s", err)
+	}
+	if realMode, ok := modeInterface.(*ModePacket); !ok {
+		t.Fatalf("ReadMessage() did not return the expected type")
+	} else if realMode.Mode != 42 {
+		t.Fatalf("ReadMessage() returned a Mode packet with incorrect settings")
+	}
+}
