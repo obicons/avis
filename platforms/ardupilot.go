@@ -20,6 +20,7 @@ type ArduPilot struct {
 	droneSignalPath string
 	cmd             *exec.Cmd
 	logger          *log.Logger
+	lastMsgTime     time.Time
 }
 
 const droneSignalTimeout = time.Millisecond * 250
@@ -121,7 +122,10 @@ func (a *ArduPilot) GetGazeboConfig() (*sim.GazeboConfig, error) {
 func (a *ArduPilot) checkDroneSignal(isPostStep bool) {
 	socket, err := net.Dial("unix", a.droneSignalPath)
 	if err != nil {
-		a.logger.Printf("checkDroneSignal: %s\n", err)
+		if time.Now().Sub(a.lastMsgTime) > time.Second {
+			a.logger.Printf("checkDroneSignal: %s\n", err)
+			a.lastMsgTime = time.Now()
+		}
 		return
 	}
 	defer socket.Close()

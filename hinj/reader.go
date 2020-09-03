@@ -3,7 +3,6 @@ package hinj
 import (
 	"fmt"
 	"io"
-	"log"
 
 	"github.com/obicons/rmck/util"
 )
@@ -34,11 +33,40 @@ func (h *HINJReader) ReadMessage() (interface{}, error) {
 	switch sensorType {
 	case GPS:
 		gpsPacket := GPSPacket{}
-		if err := util.ReadPackedStruct(msgBytes, gpsPacket); err != nil {
-			log.Printf("ReadMessage(): reading GPS: %s\n", err)
+		if err := util.ReadPackedStruct(msgBytes, &gpsPacket); err != nil {
+			return nil, fmt.Errorf("ReadMessage(): reading GPS: %s\n", err)
 		}
 		return &gpsPacket, nil
-		// TODO: complete me!
+	case Accelerometer:
+		accelerometerPacket := AccelerometerPacket{}
+		if err := util.ReadPackedStruct(msgBytes, &accelerometerPacket); err != nil {
+			return nil, fmt.Errorf("ReadMessage(): reading accelerometer: %s\n", err)
+		}
+		return &accelerometerPacket, nil
+	case Gyroscope:
+		gyroPacket := GyroscopePacket{}
+		if err := util.ReadPackedStruct(msgBytes, &gyroPacket); err != nil {
+			return nil, fmt.Errorf("ReadMessage(): reading gyro: %s\n", err)
+		}
+		return &gyroPacket, nil
+	case Battery:
+		batteryPacket := BatteryPacket{}
+		if err := util.ReadPackedStruct(msgBytes, &batteryPacket); err != nil {
+			return nil, fmt.Errorf("ReadMessage(): reading battery: %s\n", err)
+		}
+		return &batteryPacket, nil
+	case Barometer:
+		barometerPacket := BarometerPacket{}
+		if err := util.ReadPackedStruct(msgBytes, &barometerPacket); err != nil {
+			return nil, fmt.Errorf("ReadMessage(): reading barometer: %s\n", err)
+		}
+		return &barometerPacket, nil
+	case Mode:
+		modePacket := ModePacket{}
+		if err := util.ReadPackedStruct(msgBytes, &modePacket); err != nil {
+			return nil, fmt.Errorf("ReadMessage(): reading mode: %s\n", err)
+		}
+		return &modePacket, nil
 	default:
 		return nil, fmt.Errorf("ReadMessage(): unsupported type: %d", sensorType)
 	}

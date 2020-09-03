@@ -26,14 +26,14 @@ func ReadPackedStruct(bytes []byte, place interface{}) error {
 			if len(bytes) < 1 {
 				return fmt.Errorf("error: not enough bytes to read uint8: %d", len(bytes))
 			}
-			u8 := uint8(HostByteOrder.Uint16(bytes[0:1]))
+			u8 := uint8(bytes[0])
 			val.Field(fieldNo).Set(reflect.ValueOf(u8))
 			bytes = bytes[1:]
 		case reflect.Int8:
 			if len(bytes) < 1 {
 				return fmt.Errorf("error: not enough bytes to read int8: %d", len(bytes))
 			}
-			i8 := int8(HostByteOrder.Uint16(bytes[0:1]))
+			i8 := int8(bytes[0])
 			val.Field(fieldNo).Set(reflect.ValueOf(i8))
 			bytes = bytes[1:]
 		case reflect.Uint16:

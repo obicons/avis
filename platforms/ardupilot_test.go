@@ -9,7 +9,7 @@ import (
 	"github.com/obicons/rmck/util"
 )
 
-func TestNewArduPilotFromEnvNoEnvVar(t *testing.T) {
+func TestUnitNewArduPilotFromEnvNoEnvVar(t *testing.T) {
 	prev := os.Getenv("ARDUPILOT_SRC_PATH")
 	defer os.Setenv("ARDUPILOT_SRC_PATH", prev)
 
@@ -25,7 +25,7 @@ func TestNewArduPilotFromEnvNoEnvVar(t *testing.T) {
 	}
 }
 
-func TestNewArduPilotFromEnvBadPath(t *testing.T) {
+func TestUnitNewArduPilotFromEnvBadPath(t *testing.T) {
 	prev := os.Getenv("ARDUPILOT_SRC_PATH")
 	defer os.Setenv("ARDUPILOT_SRC_PATH", prev)
 
@@ -40,7 +40,7 @@ func TestNewArduPilotFromEnvBadPath(t *testing.T) {
 	}
 }
 
-func TestArduPilotFunctional(t *testing.T) {
+func TestFunctionalArduPilot(t *testing.T) {
 	system, err := NewArduPilotFromEnv()
 	if err != nil {
 		t.Fatalf("NewArduPilotFromEnv returned an unexpected error: %s", err)
