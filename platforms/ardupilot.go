@@ -72,11 +72,9 @@ func NewArduPilotFromEnv() (System, error) {
 func (a *ArduPilot) Start() error {
 	workDir := path.Join(a.srcPath, "Tools/autotest/")
 
-	// TODO: is --sim-port-in still necessary?
 	cmd := exec.Command(
 		"./sim_vehicle.py", "-f", "gazebo-iris",
 		"--vehicle", "ArduCopter", "--console", "--no-rebuild",
-		"--sitl-instance-args", "--sim-port-in", "10000",
 	)
 	cmd.Dir = workDir
 	cmd.Env = os.Environ()

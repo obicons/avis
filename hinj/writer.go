@@ -30,6 +30,12 @@ func (h *HINJWriter) WriteMessage(msg interface{}) error {
 	case *ModePacket:
 		ok = true
 		sensor = Mode
+	case *BarometerPacket:
+		ok = true
+		sensor = Barometer
+	case *CompassPacket:
+		ok = true
+		sensor = Compass
 	}
 
 	if !ok {
@@ -43,7 +49,7 @@ func (h *HINJWriter) WriteMessage(msg interface{}) error {
 
 	// writes the preamble
 	bytes[0] = byte(sensor)
-	util.HostByteOrder.PutUint32(bytes[1:5], uint32(size))
+	util.HostByteOrder.PutUint32(bytes[1:5], uint32(size+msgPreambleSize))
 
 	// writes the rest of the packet
 	util.PackedStructToBytes(bytes[msgPreambleSize:], msg)

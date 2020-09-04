@@ -78,6 +78,8 @@ func (server *HINJServer) work() {
 
 		// TODO: actually process the message
 		writer.WriteMessage(msg)
+
+		conn.Close()
 	}
 }
 

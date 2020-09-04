@@ -22,9 +22,6 @@ Run `make test-unit`.
 Run `make test-functional`.
 
 ## TODO
-- HINJ support:
-  - Read message types
-  - Start hardware server
-- Implementing API gateway (e.g. over unix sockets)
-- Porting Python drivers to use this new API gateway
-- Reimplementing the core checker
+- Implement API gateway for controlling failures (e.g. over unix sockets)
+- Port Python drivers to use new API gateway
+- Reimplement the core checker
