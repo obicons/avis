@@ -26,8 +26,8 @@ func (h *HINJReader) ReadMessage() (interface{}, error) {
 	count, err := h.reader.Read(msgBytes)
 	if err != nil {
 		return nil, err
-	} else if count != int(msgSize) {
-		return nil, fmt.Errorf("ReadMessage(): bad Read() of length %d", count)
+	} else if count != int(msgSize-msgPreambleSize) {
+		return nil, fmt.Errorf("ReadMessage(): bad Read() of length %d for type %d", count, sensorType)
 	}
 
 	switch sensorType {
@@ -67,6 +67,12 @@ func (h *HINJReader) ReadMessage() (interface{}, error) {
 			return nil, fmt.Errorf("ReadMessage(): reading mode: %s\n", err)
 		}
 		return &modePacket, nil
+	case Compass:
+		compassPacket := CompassPacket{}
+		if err := util.ReadPackedStruct(msgBytes, &compassPacket); err != nil {
+			return nil, fmt.Errorf("ReadMessage(): reading compass: %s\n", err)
+		}
+		return &compassPacket, nil
 	default:
 		return nil, fmt.Errorf("ReadMessage(): unsupported type: %d", sensorType)
 	}

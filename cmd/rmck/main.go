@@ -46,14 +46,14 @@ func main() {
 		log.Fatalf("Could not start ArduPilot: %s\n", err)
 	}
 
-	time.Sleep(time.Second * 45)
+	time.Sleep(time.Second * 20)
 	fmt.Println("done sleeping!")
 
 	startTime := time.Now()
 	for i := 0; time.Now().Sub(startTime) < time.Second*60; i++ {
 		gazebo.Step(context.Background())
-		time.Sleep(time.Millisecond * 10)
 	}
+	fmt.Println("done stepping!")
 
 	ctx, cc := context.WithTimeout(context.Background(), time.Second*5)
 	defer cc()

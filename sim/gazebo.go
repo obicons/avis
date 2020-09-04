@@ -48,7 +48,7 @@ type GazeboConfig struct {
 // implements sim.Sim
 func (gazebo *Gazebo) Start() error {
 	var cmd *exec.Cmd
-	cmd = exec.Command(gazebo.ExecutablePath, "--pause", gazebo.Config.WorldPath)
+	cmd = exec.Command(gazebo.ExecutablePath, "--pause", "--verbose", gazebo.Config.WorldPath)
 	cmd.Dir = gazebo.Config.WorkDir
 	cmd.Env = append(os.Environ(), []string{"DISPLAY=:0", "LC_ALL=C"}...)
 	cmd.Env = append(cmd.Env, gazebo.Config.Env...)
@@ -73,9 +73,10 @@ func (gazebo *Gazebo) Start() error {
 // implements sim.Sim
 func (gazebo *Gazebo) Stop(ctx context.Context) error {
 	if gazebo.Cmd.ProcessState != nil && gazebo.Cmd.ProcessState.Exited() {
-		return fmt.Errorf("Cannot stop gazebo: already existed with status %d", gazebo.Cmd.ProcessState.ExitCode())
+		return fmt.Errorf("Cannot stop gazebo: already exited with status %d", gazebo.Cmd.ProcessState.ExitCode())
 	}
-	return util.GracefulStop(gazebo.Cmd, ctx)
+	util.GracefulStop(gazebo.Cmd, ctx)
+	return nil
 }
 
 // implements sim.Sim

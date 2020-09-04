@@ -67,6 +67,14 @@ type BarometerPacket struct {
 	Temperature float32
 }
 
+type CompassPacket struct {
+	Instance uint8
+	Ignore   uint8
+	Mag0     float32
+	Mag1     float32
+	Mag2     float32
+}
+
 type ModePacket struct {
 	Mode uint32
 }

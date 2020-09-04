@@ -2,7 +2,7 @@ package hinj
 
 import "testing"
 
-func TestNewHINJServerUnixAddr(t *testing.T) {
+func TestUnitNewHINJServerUnixAddr(t *testing.T) {
 	url := "unix:///Users/myUser/file.sock"
 	expectedNetwork := "unix"
 	expectedString := "/Users/myUser/file.sock"

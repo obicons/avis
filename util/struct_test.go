@@ -18,6 +18,12 @@ type simpleStruct struct {
 	F64 float64
 }
 
+type f32Struct struct {
+	a float32
+	b float32
+	c float32
+}
+
 var (
 	expectedU16 = uint16(42)
 	expectedI16 = int16(-42)
@@ -191,5 +197,13 @@ func TestUnitWritePackedStructSimpleValue(t *testing.T) {
 	}
 	if actualF64 != expectedF64 {
 		t.Fatalf("Expected F64 = %f, found %f", expectedF64, actualF64)
+	}
+}
+
+func TestUnitF32Size(t *testing.T) {
+	expected := 12
+	actual, _ := PackedStructSize(f32Struct{})
+	if expected != actual {
+		t.Fatalf("expected size %d, found %d", expected, actual)
 	}
 }
