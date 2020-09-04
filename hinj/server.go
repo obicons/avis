@@ -13,12 +13,13 @@ import (
  *   2. Applying modification rules
  *   3. Performing those modifications
  */
-
 type HINJServer struct {
-	Addr            net.Addr
-	Listener        net.Listener
-	shutdownChan    chan int
-	shutdownAckChan chan int
+	Addr                     net.Addr
+	Listener                 net.Listener
+	shutdownChan             chan int
+	shutdownAckChan          chan int
+	failureStateBySensorType map[Sensor]map[uint8]bool
+	enableFailureChan        chan SensorFailure
 }
 
 type URLAddr url.URL
@@ -29,7 +30,14 @@ func NewHINJServer(rawURL string) (*HINJServer, error) {
 		return nil, err
 	}
 
-	server := HINJServer{Addr: (*URLAddr)(tmpURL)}
+	server := HINJServer{
+		Addr:                     (*URLAddr)(tmpURL),
+		shutdownChan:             make(chan int),
+		shutdownAckChan:          make(chan int),
+		enableFailureChan:        make(chan SensorFailure),
+		failureStateBySensorType: make(map[Sensor]map[uint8]bool),
+	}
+
 	return &server, nil
 }
 
@@ -55,6 +63,11 @@ func (server *HINJServer) Shutdown() {
 	<-server.shutdownAckChan
 }
 
+// Causes all future reads of the provided sensor category and instance to fail.
+func (server *HINJServer) FailSensor(sensorType Sensor, instanceNo uint8) {
+
+}
+
 func (server *HINJServer) work() {
 	keepGoing := true
 	for keepGoing {
@@ -69,6 +82,7 @@ func (server *HINJServer) work() {
 				continue
 			}
 		}
+		server.checkForPendingFailures()
 		reader := NewHINJReader(conn)
 		writer := NewHINJWriter(conn)
 		msg, err := reader.ReadMessage()
@@ -76,10 +90,45 @@ func (server *HINJServer) work() {
 			log.Printf("HINJServer.work(): error: %s\n", err)
 		}
 
-		// TODO: actually process the message
+		server.checkAndFail(msg)
 		writer.WriteMessage(msg)
-
 		conn.Close()
+	}
+}
+
+func (server *HINJServer) checkForPendingFailures() {
+	keepGoing := true
+	for keepGoing {
+		select {
+		case failure := <-server.enableFailureChan:
+			server.failureStateBySensorType[failure.SensorType][failure.Instance] = true
+		default:
+			keepGoing = false
+		}
+	}
+}
+
+func (server *HINJServer) checkAndFail(msg interface{}) {
+	if gpsPacket, ok := msg.(*GPSPacket); ok {
+		if server.failureStateBySensorType[GPS][gpsPacket.Instance] {
+			gpsPacket.Ignore = 1
+		}
+	} else if accelPacket, ok := msg.(*AccelerometerPacket); ok {
+		if server.failureStateBySensorType[Accelerometer][accelPacket.Instance] {
+			accelPacket.Ignore = 1
+		}
+	} else if gyroPacket, ok := msg.(*GyroscopePacket); ok {
+		if server.failureStateBySensorType[Gyroscope][gyroPacket.Instance] {
+			gyroPacket.Ignore = 1
+		}
+	} else if baroPacket, ok := msg.(*BarometerPacket); ok {
+		if server.failureStateBySensorType[Barometer][baroPacket.Instance] {
+			baroPacket.Ignore = 1
+		}
+	} else if compassPacket, ok := msg.(*CompassPacket); ok {
+		if server.failureStateBySensorType[Compass][compassPacket.Instance] {
+			compassPacket.Ignore = 1
+		}
 	}
 }
 
