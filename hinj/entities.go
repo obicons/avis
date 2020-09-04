@@ -20,6 +20,11 @@ const (
 	msgPreambleSize = 5
 )
 
+type SensorFailure struct {
+	SensorType Sensor
+	Instance   uint8
+}
+
 type GPSPacket struct {
 	Instance          uint8
 	Ignore            uint8
