@@ -14,9 +14,14 @@ import (
 )
 
 func main() {
-	ardupilot, err := platforms.NewArduPilotFromEnv()
+	// ardupilot, err := platforms.NewArduPilotFromEnv()
+	// if err != nil {
+	// 	log.Fatalf("Could not get an ArduPilot instance: %s\n", err)
+	// }
+
+	px4, err := platforms.NewPX4FromEnv()
 	if err != nil {
-		log.Fatalf("Could not get an ArduPilot instance: %s\n", err)
+		log.Fatalf("Could not get a PX4 instance: %s\n", err)
 	}
 
 	hinj, err := hinj.NewHINJServer(getHINJAddr())
@@ -27,7 +32,8 @@ func main() {
 		log.Fatalf("Error starting HINJ server: %s\n", err)
 	}
 
-	config, _ := ardupilot.GetGazeboConfig()
+	// config, _ := ardupilot.GetGazeboConfig()
+	config, _ := px4.GetGazeboConfig()
 
 	gazebo, err := sim.NewGazeboFromEnv(config)
 	if err != nil {
@@ -41,23 +47,33 @@ func main() {
 
 	time.Sleep(time.Second * 5)
 
-	err = ardupilot.Start()
+	// err = ardupilot.Start()
+	// if err != nil {
+	// 	log.Fatalf("Could not start ArduPilot: %s\n", err)
+	// }
+	err = px4.Start()
 	if err != nil {
-		log.Fatalf("Could not start ArduPilot: %s\n", err)
+		log.Fatalf("Could not start PX4: %s\n", err)
 	}
 
-	time.Sleep(time.Second * 20)
+	fmt.Println("sleeping")
+	time.Sleep(time.Second * 35)
 	fmt.Println("done sleeping!")
 
 	startTime := time.Now()
 	for i := 0; time.Now().Sub(startTime) < time.Second*60; i++ {
-		gazebo.Step(context.Background())
+		fmt.Printf("stepping: %d\n", i)
+		err = gazebo.Step(context.Background())
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 	fmt.Println("done stepping!")
 
 	ctx, cc := context.WithTimeout(context.Background(), time.Second*5)
 	defer cc()
-	ardupilot.Stop(ctx)
+	// ardupilot.Stop(ctx)
+	px4.Stop(ctx)
 
 	ctx, cc = context.WithTimeout(context.Background(), time.Second*5)
 	defer cc()

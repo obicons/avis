@@ -112,6 +112,7 @@ func (a *ArduPilot) GetGazeboConfig() (*sim.GazeboConfig, error) {
 		WorldPath:       path.Join(a.gazeboSrcPath, "worlds/iris_arducopter_runway.world"),
 		PreStepActions:  []sim.StepActions{func() { a.checkDroneSignal(false) }},
 		PostStepActions: []sim.StepActions{func() { a.checkDroneSignal(true) }},
+		StepSize:        1000000,
 	}
 	return &config, nil
 }
