@@ -12,6 +12,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/creack/pty"
 	"github.com/obicons/rmck/util"
 )
 
@@ -25,7 +26,8 @@ type Gazebo struct {
 	TimePath        string
 	StepPath        string
 	PositionPath    string
-	TotalIterations int64
+	TotalIterations uint64
+	PTY             *os.File
 }
 
 type GazeboConfig struct {
@@ -43,6 +45,9 @@ type GazeboConfig struct {
 
 	// Actions to invoke post-step
 	PostStepActions []StepActions
+
+	// Length of each unit of simulation
+	StepSize uint64
 }
 
 // implements sim.Sim
@@ -59,13 +64,15 @@ func (gazebo *Gazebo) Start() error {
 	}
 
 	gazebo.Logger = logging
-	if err = util.LogProcess(cmd, logging); err != nil {
-		return err
-	}
 
-	if err := cmd.Start(); err != nil {
+	pty, err := pty.Start(cmd)
+	if err != nil {
 		return err
 	}
+	gazebo.PTY = pty
+
+	util.LogReader(pty, logging)
+
 	gazebo.Cmd = cmd
 	return nil
 }
@@ -76,6 +83,7 @@ func (gazebo *Gazebo) Stop(ctx context.Context) error {
 		return fmt.Errorf("Cannot stop gazebo: already exited with status %d", gazebo.Cmd.ProcessState.ExitCode())
 	}
 	util.GracefulStop(gazebo.Cmd, ctx)
+	gazebo.PTY.Close()
 	return nil
 }
 
@@ -128,12 +136,16 @@ func (g *Gazebo) Step(ctx context.Context) error {
 		default:
 			addr, err := net.Dial("unix", g.StepPath)
 			if err != nil {
+				time.Sleep(time.Millisecond * 10)
 				continue
 			}
 
 			var bytes []byte = make([]byte, 8)
 			g.TotalIterations += 1
-			binary.LittleEndian.PutUint64(bytes, uint64(g.TotalIterations*1000000))
+			binary.LittleEndian.PutUint64(
+				bytes,
+				uint64(g.TotalIterations*g.Config.StepSize),
+			)
 			_, err = addr.Write(bytes)
 			addr.Close()
 			if err != nil {

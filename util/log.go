@@ -60,6 +60,21 @@ func GetLogger(forComponent string) (*log.Logger, error) {
 	return log.New(file, forComponent, flags), nil
 }
 
+func LogReader(reader io.Reader, log *log.Logger) {
+	go func() {
+		ch := lines(reader)
+		keepLogging := true
+		for keepLogging {
+			line, ok := <-ch
+			if !ok {
+				keepLogging = false
+			} else {
+				log.Println(line)
+			}
+		}
+	}()
+}
+
 func LogProcess(cmd *exec.Cmd, log *log.Logger) error {
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

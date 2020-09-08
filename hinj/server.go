@@ -79,6 +79,7 @@ func (server *HINJServer) work() {
 				keepGoing = false
 				server.shutdownAckChan <- 1
 			default:
+				log.Printf("HINJServer.work(): error %s\n", err)
 				continue
 			}
 		}
@@ -91,7 +92,10 @@ func (server *HINJServer) work() {
 		}
 
 		server.checkAndFail(msg)
-		writer.WriteMessage(msg)
+		err = writer.WriteMessage(msg)
+		if err != nil {
+			log.Printf("HINJServer.work(): error writing: %s\n", err)
+		}
 		conn.Close()
 	}
 }

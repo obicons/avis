@@ -81,7 +81,7 @@ func (px4 *PX4) Stop(ctx context.Context) error {
 
 // implements System
 func (px4 *PX4) GetGazeboConfig() (*sim.GazeboConfig, error) {
-	worldfilePath := path.Join(px4.srcPath, "Tools/sitl_gazebo/iris.world")
+	worldfilePath := path.Join(px4.srcPath, "Tools/sitl_gazebo/worlds/iris.world")
 	if _, err := os.Stat(worldfilePath); err != nil {
 		return nil, fmt.Errorf("GetGazeboConfig(): %s", err)
 	}
@@ -97,6 +97,8 @@ func (px4 *PX4) GetGazeboConfig() (*sim.GazeboConfig, error) {
 			fmt.Sprintf("GAZEBO_MODEL_PATH=%s", modelPath),
 			fmt.Sprintf("LD_LIBRARY_PATH=%s", ldLibraryPath),
 		},
+		WorkDir:  px4.srcPath,
+		StepSize: 4000000,
 	}
 	return &conf, nil
 }
