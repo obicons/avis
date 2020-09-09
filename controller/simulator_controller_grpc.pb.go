@@ -19,6 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 type SimulatorControllerClient interface {
 	Step(ctx context.Context, in *StepRequest, opts ...grpc.CallOption) (*StepResponse, error)
 	Position(ctx context.Context, in *PositionRequest, opts ...grpc.CallOption) (*PositionResponse, error)
+	Time(ctx context.Context, in *TimeRequest, opts ...grpc.CallOption) (*TimeResponse, error)
 }
 
 type simulatorControllerClient struct {
@@ -55,6 +56,19 @@ func (c *simulatorControllerClient) Position(ctx context.Context, in *PositionRe
 	return out, nil
 }
 
+var simulatorControllerTimeStreamDesc = &grpc.StreamDesc{
+	StreamName: "Time",
+}
+
+func (c *simulatorControllerClient) Time(ctx context.Context, in *TimeRequest, opts ...grpc.CallOption) (*TimeResponse, error) {
+	out := new(TimeResponse)
+	err := c.cc.Invoke(ctx, "/controller.SimulatorController/Time", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SimulatorControllerService is the service API for SimulatorController service.
 // Fields should be assigned to their respective handler implementations only before
 // RegisterSimulatorControllerService is called.  Any unassigned fields will result in the
@@ -62,6 +76,7 @@ func (c *simulatorControllerClient) Position(ctx context.Context, in *PositionRe
 type SimulatorControllerService struct {
 	Step     func(context.Context, *StepRequest) (*StepResponse, error)
 	Position func(context.Context, *PositionRequest) (*PositionResponse, error)
+	Time     func(context.Context, *TimeRequest) (*TimeResponse, error)
 }
 
 func (s *SimulatorControllerService) step(_ interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -98,6 +113,23 @@ func (s *SimulatorControllerService) position(_ interface{}, ctx context.Context
 	}
 	return interceptor(ctx, in, info, handler)
 }
+func (s *SimulatorControllerService) time(_ interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TimeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return s.Time(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     s,
+		FullMethod: "/controller.SimulatorController/Time",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return s.Time(ctx, req.(*TimeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
 
 // RegisterSimulatorControllerService registers a service implementation with a gRPC server.
 func RegisterSimulatorControllerService(s grpc.ServiceRegistrar, srv *SimulatorControllerService) {
@@ -112,6 +144,11 @@ func RegisterSimulatorControllerService(s grpc.ServiceRegistrar, srv *SimulatorC
 			return nil, status.Errorf(codes.Unimplemented, "method Position not implemented")
 		}
 	}
+	if srvCopy.Time == nil {
+		srvCopy.Time = func(context.Context, *TimeRequest) (*TimeResponse, error) {
+			return nil, status.Errorf(codes.Unimplemented, "method Time not implemented")
+		}
+	}
 	sd := grpc.ServiceDesc{
 		ServiceName: "controller.SimulatorController",
 		Methods: []grpc.MethodDesc{
@@ -122,6 +159,10 @@ func RegisterSimulatorControllerService(s grpc.ServiceRegistrar, srv *SimulatorC
 			{
 				MethodName: "Position",
 				Handler:    srvCopy.position,
+			},
+			{
+				MethodName: "Time",
+				Handler:    srvCopy.time,
 			},
 		},
 		Streams:  []grpc.StreamDesc{},
@@ -149,6 +190,11 @@ func NewSimulatorControllerService(s interface{}) *SimulatorControllerService {
 	}); ok {
 		ns.Position = h.Position
 	}
+	if h, ok := s.(interface {
+		Time(context.Context, *TimeRequest) (*TimeResponse, error)
+	}); ok {
+		ns.Time = h.Time
+	}
 	return ns
 }
 
@@ -159,4 +205,5 @@ func NewSimulatorControllerService(s interface{}) *SimulatorControllerService {
 type UnstableSimulatorControllerService interface {
 	Step(context.Context, *StepRequest) (*StepResponse, error)
 	Position(context.Context, *PositionRequest) (*PositionResponse, error)
+	Time(context.Context, *TimeRequest) (*TimeResponse, error)
 }

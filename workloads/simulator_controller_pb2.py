@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'Z\013/controller',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x1asimulator_controller.proto\x12\ncontroller\"*\n\x05\x45rror\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x13\n\x0b\x65xplanation\x18\x02 \x01(\t\"\r\n\x0bStepRequest\"B\n\x0cStepResponse\x12 \n\x05\x65rror\x18\x01 \x01(\x0b\x32\x11.controller.Error\x12\x10\n\x08hasError\x18\x02 \x01(\x08\"\x11\n\x0fPositionRequest\"3\n\x10PositionResponse\x12\t\n\x01x\x18\x01 \x01(\x01\x12\t\n\x01y\x18\x02 \x01(\x01\x12\t\n\x01z\x18\x03 \x01(\x01\x32\x97\x01\n\x13SimulatorController\x12\x39\n\x04Step\x12\x17.controller.StepRequest\x1a\x18.controller.StepResponse\x12\x45\n\x08Position\x12\x1b.controller.PositionRequest\x1a\x1c.controller.PositionResponseB\rZ\x0b/controllerb\x06proto3'
+  serialized_pb=b'\n\x1asimulator_controller.proto\x12\ncontroller\"*\n\x05\x45rror\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x13\n\x0b\x65xplanation\x18\x02 \x01(\t\"\r\n\x0bStepRequest\"B\n\x0cStepResponse\x12 \n\x05\x65rror\x18\x01 \x01(\x0b\x32\x11.controller.Error\x12\x10\n\x08hasError\x18\x02 \x01(\x08\"\x11\n\x0fPositionRequest\"3\n\x10PositionResponse\x12\t\n\x01x\x18\x01 \x01(\x01\x12\t\n\x01y\x18\x02 \x01(\x01\x12\t\n\x01z\x18\x03 \x01(\x01\"\r\n\x0bTimeRequest\"a\n\x0cTimeResponse\x12\r\n\x05tvSec\x18\x01 \x01(\x04\x12\x0e\n\x06tvUSec\x18\x02 \x01(\x04\x12\x10\n\x08hasError\x18\x03 \x01(\x08\x12 \n\x05\x65rror\x18\x04 \x01(\x0b\x32\x11.controller.Error2\xd2\x01\n\x13SimulatorController\x12\x39\n\x04Step\x12\x17.controller.StepRequest\x1a\x18.controller.StepResponse\x12\x45\n\x08Position\x12\x1b.controller.PositionRequest\x1a\x1c.controller.PositionResponse\x12\x39\n\x04Time\x12\x17.controller.TimeRequest\x1a\x18.controller.TimeResponseB\rZ\x0b/controllerb\x06proto3'
 )
 
 
@@ -198,12 +198,93 @@ _POSITIONRESPONSE = _descriptor.Descriptor(
   serialized_end=239,
 )
 
+
+_TIMEREQUEST = _descriptor.Descriptor(
+  name='TimeRequest',
+  full_name='controller.TimeRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=241,
+  serialized_end=254,
+)
+
+
+_TIMERESPONSE = _descriptor.Descriptor(
+  name='TimeResponse',
+  full_name='controller.TimeResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='tvSec', full_name='controller.TimeResponse.tvSec', index=0,
+      number=1, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='tvUSec', full_name='controller.TimeResponse.tvUSec', index=1,
+      number=2, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='hasError', full_name='controller.TimeResponse.hasError', index=2,
+      number=3, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='error', full_name='controller.TimeResponse.error', index=3,
+      number=4, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=256,
+  serialized_end=353,
+)
+
 _STEPRESPONSE.fields_by_name['error'].message_type = _ERROR
+_TIMERESPONSE.fields_by_name['error'].message_type = _ERROR
 DESCRIPTOR.message_types_by_name['Error'] = _ERROR
 DESCRIPTOR.message_types_by_name['StepRequest'] = _STEPREQUEST
 DESCRIPTOR.message_types_by_name['StepResponse'] = _STEPRESPONSE
 DESCRIPTOR.message_types_by_name['PositionRequest'] = _POSITIONREQUEST
 DESCRIPTOR.message_types_by_name['PositionResponse'] = _POSITIONRESPONSE
+DESCRIPTOR.message_types_by_name['TimeRequest'] = _TIMEREQUEST
+DESCRIPTOR.message_types_by_name['TimeResponse'] = _TIMERESPONSE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 Error = _reflection.GeneratedProtocolMessageType('Error', (_message.Message,), {
@@ -241,6 +322,20 @@ PositionResponse = _reflection.GeneratedProtocolMessageType('PositionResponse', 
   })
 _sym_db.RegisterMessage(PositionResponse)
 
+TimeRequest = _reflection.GeneratedProtocolMessageType('TimeRequest', (_message.Message,), {
+  'DESCRIPTOR' : _TIMEREQUEST,
+  '__module__' : 'simulator_controller_pb2'
+  # @@protoc_insertion_point(class_scope:controller.TimeRequest)
+  })
+_sym_db.RegisterMessage(TimeRequest)
+
+TimeResponse = _reflection.GeneratedProtocolMessageType('TimeResponse', (_message.Message,), {
+  'DESCRIPTOR' : _TIMERESPONSE,
+  '__module__' : 'simulator_controller_pb2'
+  # @@protoc_insertion_point(class_scope:controller.TimeResponse)
+  })
+_sym_db.RegisterMessage(TimeResponse)
+
 
 DESCRIPTOR._options = None
 
@@ -251,8 +346,8 @@ _SIMULATORCONTROLLER = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=242,
-  serialized_end=393,
+  serialized_start=356,
+  serialized_end=566,
   methods=[
   _descriptor.MethodDescriptor(
     name='Step',
@@ -271,6 +366,16 @@ _SIMULATORCONTROLLER = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_POSITIONREQUEST,
     output_type=_POSITIONRESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='Time',
+    full_name='controller.SimulatorController.Time',
+    index=2,
+    containing_service=None,
+    input_type=_TIMEREQUEST,
+    output_type=_TIMERESPONSE,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
