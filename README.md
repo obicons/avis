@@ -21,7 +21,15 @@ Run `make test-unit`.
 ### Functional Tests
 Run `make test-functional`.
 
+### GRPC 
+GRPC is used for the workload to interact with RMCK. To get the needed programs, run:
+```
+$ go get -u google.golang.org/protobuf/cmd/protoc-gen-go
+$ go install google.golang.org/protobuf/cmd/protoc-gen-go
+$ go get google.golang.org/grpc/cmd/protoc-gen-go-grpc
+$ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
+```
+
 ## TODO
-- Implement API gateway for controlling failures (e.g. over unix sockets)
 - Port Python drivers to use new API gateway
 - Reimplement the core checker

@@ -1,0 +1,33 @@
+syntax = "proto3";
+package controller;
+option go_package = "/controller";
+
+message Error {
+        int32 code = 1;
+        string explanation = 2;
+}
+
+
+message StepRequest {
+        // empty for now
+}
+
+message StepResponse {
+        Error error = 1;
+        bool hasError = 2;
+}
+
+message PositionRequest {
+        // empty for now
+}
+
+message PositionResponse {
+        double x = 1;
+        double y = 2;
+        double z = 3;
+}
+
+service SimulatorController {
+        rpc Step(StepRequest) returns (StepResponse);
+        rpc Position(PositionRequest) returns (PositionResponse);
+}

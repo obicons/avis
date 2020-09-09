@@ -159,6 +159,41 @@ func (g *Gazebo) Step(ctx context.Context) error {
 	return err
 }
 
+// implements sim.Sim
+func (g *Gazebo) Position(ctx context.Context) (Position, error) {
+	position := Position{}
+	done := ctx.Done()
+	keepTrying := true
+	for keepTrying {
+		select {
+		case <-done:
+			keepTrying = false
+		default:
+			conn, err := net.Dial("unix", g.PositionPath)
+			if err != nil {
+				time.Sleep(time.Millisecond)
+				continue
+			}
+
+			var positionBytes [24]byte
+			if n, err := conn.Read(positionBytes[:]); err != nil {
+				conn.Close()
+				time.Sleep(time.Millisecond)
+				continue
+			} else if n != len(positionBytes) {
+				conn.Close()
+				time.Sleep(time.Millisecond)
+				continue
+			}
+
+			// this should never fail (see the test case in sim_test.go)
+			util.ReadPackedStruct(positionBytes[:], &position)
+			keepTrying = false
+		}
+	}
+	return position, ctx.Err()
+}
+
 func (g *Gazebo) doPreStep() {
 	for _, action := range g.Config.PreStepActions {
 		action()
@@ -171,7 +206,7 @@ func (g *Gazebo) doPostStep() {
 	}
 }
 
-func NewGazeboFromEnv(config *GazeboConfig) (*Gazebo, error) {
+func NewGazeboFromEnv(config *GazeboConfig) (Sim, error) {
 	gazeboPath, error := exec.LookPath("gzserver")
 	if error != nil {
 		return nil, fmt.Errorf("error: gzserver not found on PATH")
