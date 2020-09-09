@@ -2,15 +2,21 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path"
 	"time"
 
+	"github.com/obicons/rmck/controller"
 	"github.com/obicons/rmck/hinj"
 	"github.com/obicons/rmck/platforms"
 	"github.com/obicons/rmck/sim"
+)
+
+var (
+	rpcAddr = flag.String("rpc.addr", os.ExpandEnv("unix://$HOME/.rmck_rpc"), "URL of RPC server")
 )
 
 func main() {
@@ -18,6 +24,7 @@ func main() {
 	// if err != nil {
 	// 	log.Fatalf("Could not get an ArduPilot instance: %s\n", err)
 	// }
+	flag.Parse()
 
 	px4, err := platforms.NewPX4FromEnv()
 	if err != nil {
@@ -60,9 +67,19 @@ func main() {
 	time.Sleep(time.Second * 35)
 	fmt.Println("done sleeping!")
 
+	rpcServer, err := controller.New(*rpcAddr, gazebo)
+	if err != nil {
+		log.Fatalf("Could not create RPC server: %s\n", err)
+	}
+	go func() {
+		err := rpcServer.Start()
+		if err != nil {
+			log.Fatalf("Could not start RPC server: %s\n", err)
+		}
+	}()
+
 	startTime := time.Now()
 	for i := 0; time.Now().Sub(startTime) < time.Second*60; i++ {
-		fmt.Printf("stepping: %d\n", i)
 		err = gazebo.Step(context.Background())
 		if err != nil {
 			fmt.Println(err)
@@ -80,6 +97,7 @@ func main() {
 	gazebo.Stop(ctx)
 
 	hinj.Shutdown()
+	rpcServer.Stop()
 }
 
 func getHINJAddr() string {
