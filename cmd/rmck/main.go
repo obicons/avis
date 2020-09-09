@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	rpcAddr = flag.String("rpc.addr", os.ExpandEnv("unix://$HOME/.rmck_rpc"), "URL of RPC server")
+	rpcAddr = flag.String("rpc.addr", getRPCAddr(), "URL of RPC server")
 )
 
 func main() {
@@ -115,4 +115,14 @@ func getHINJAddr() string {
 
 	addr := fmt.Sprintf("unix://%s", path)
 	return addr
+}
+
+func getRPCAddr() string {
+	path := os.ExpandEnv("$HOME/.rmck_rpc")
+	if _, err := os.Stat(path); err == nil {
+		if err = os.Remove(path); err != nil {
+			panic(err)
+		}
+	}
+	return "unix://" + path
 }
