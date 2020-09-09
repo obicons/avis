@@ -33,3 +33,4 @@ $ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 ## TODO
 - Port Python drivers to use new API gateway
 - Reimplement the core checker
+- Metrics server for interesting stats (e.g. # of synthetic readings, etc)

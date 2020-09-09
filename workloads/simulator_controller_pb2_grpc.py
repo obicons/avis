@@ -24,6 +24,11 @@ class SimulatorControllerStub(object):
                 request_serializer=simulator__controller__pb2.PositionRequest.SerializeToString,
                 response_deserializer=simulator__controller__pb2.PositionResponse.FromString,
                 )
+        self.Time = channel.unary_unary(
+                '/controller.SimulatorController/Time',
+                request_serializer=simulator__controller__pb2.TimeRequest.SerializeToString,
+                response_deserializer=simulator__controller__pb2.TimeResponse.FromString,
+                )
 
 
 class SimulatorControllerServicer(object):
@@ -41,6 +46,12 @@ class SimulatorControllerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Time(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SimulatorControllerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -53,6 +64,11 @@ def add_SimulatorControllerServicer_to_server(servicer, server):
                     servicer.Position,
                     request_deserializer=simulator__controller__pb2.PositionRequest.FromString,
                     response_serializer=simulator__controller__pb2.PositionResponse.SerializeToString,
+            ),
+            'Time': grpc.unary_unary_rpc_method_handler(
+                    servicer.Time,
+                    request_deserializer=simulator__controller__pb2.TimeRequest.FromString,
+                    response_serializer=simulator__controller__pb2.TimeResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -95,5 +111,22 @@ class SimulatorController(object):
         return grpc.experimental.unary_unary(request, target, '/controller.SimulatorController/Position',
             simulator__controller__pb2.PositionRequest.SerializeToString,
             simulator__controller__pb2.PositionResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Time(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/controller.SimulatorController/Time',
+            simulator__controller__pb2.TimeRequest.SerializeToString,
+            simulator__controller__pb2.TimeResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

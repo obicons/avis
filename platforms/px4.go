@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path"
 
+	"github.com/creack/pty"
 	"github.com/obicons/rmck/sim"
 	"github.com/obicons/rmck/util"
 )
@@ -14,6 +15,7 @@ import (
 type PX4 struct {
 	srcPath string
 	cmd     *exec.Cmd
+	pty     *os.File
 }
 
 func NewPX4FromEnv() (System, error) {
@@ -54,22 +56,25 @@ func (px4 *PX4) Start() error {
 	)
 	cmd.Dir = rootFs
 	cmd.Env = px4Environ()
-	cmd.Stdin = os.Stdin
+	// cmd.Stdin = os.Stdin
 
 	logging, err := util.GetLogger("px4")
 	if err != nil {
 		return err
 	}
 
-	err = util.LogProcess(cmd, logging)
-	if err != nil {
-		return err
-	}
+	// err = util.LogProcess(cmd, logging)
+	// if err != nil {
+	// 	return err
+	// }
 
-	err = cmd.Start()
+	// err = cmd.Start()
+	px4.pty, err = pty.Start(cmd)
 	if err == nil {
 		px4.cmd = cmd
 	}
+
+	util.LogReader(px4.pty, logging)
 
 	return err
 }

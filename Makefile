@@ -2,8 +2,8 @@ gosrc := $(shell find ./ -name '*.go' | grep -v vendor)
 protobufRawSrc := $(shell find ./ -name '*.proto')
 protobufSrc := $(shell find ./ -name '*.proto' -exec sh -c "echo {} | sed 's/.proto/.pb.go/g'" \;)
 protobufSrcGRPC := $(shell find ./ -name '*.proto' -exec sh -c "echo {} | sed 's/.proto/_grpc.pb.go/g'" \;)
-pythonProtobufSrc := $(shell find ./ -name '*.proto' -exec sh -c 'echo pyrpc/`basename {}` | sed "s/.proto/_pb2.py/g"' \;)
-pythonProtobufSrcGRPC := $(shell find ./ -name '*.proto' -exec sh -c 'echo pyrpc/`basename {}` | sed "s/.proto/_pb2_grpc.py/g"' \;)
+pythonProtobufSrc := $(shell find ./ -name '*.proto' -exec sh -c 'echo workloads/`basename {}` | sed "s/.proto/_pb2.py/g"' \;)
+pythonProtobufSrcGRPC := $(shell find ./ -name '*.proto' -exec sh -c 'echo workloads/`basename {}` | sed "s/.proto/_pb2_grpc.py/g"' \;)
 
 ./bin/rmck: $(gosrc) $(protobufSrcGRPC) $(protobufSrc) $(pythonProtobufSrc) $(pythonProtobufSrcGRPC)
 	go build -o bin ./cmd/rmck 
@@ -12,7 +12,7 @@ clean:
 	go clean -testcache
 	rm -f ./bin/rmck
 	rm -f $(protobufSrc)
-	rm -f ./pyrpc/*
+	rm -f ./workloads/*pb2*.py
 
 .PHONY: test-unit test-functional
 test-unit:
@@ -28,4 +28,4 @@ $(protobufSrcGRPC) $(protobufSrc): $(protobufRawSrc)
 
 $(pythonProtobufSrc) $(pythonProtobufSrcGRPC): $(protobufRawSrc)
 	# TODO -- clean this up
-	pipenv run python -m grpc_tools.protoc -I=./controller/ --python_out=./pyrpc --grpc_python_out=./pyrpc ./controller/*.proto
+	pipenv run python -m grpc_tools.protoc -I=./controller/ --python_out=./workloads --grpc_python_out=./workloads ./controller/*.proto

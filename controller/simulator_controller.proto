@@ -27,7 +27,19 @@ message PositionResponse {
         double z = 3;
 }
 
+message TimeRequest {
+        // empty for now
+}
+
+message TimeResponse {
+        uint64 tvSec = 1;
+        uint64 tvUSec = 2;
+        bool hasError = 3;
+        Error error = 4;
+}
+
 service SimulatorController {
         rpc Step(StepRequest) returns (StepResponse);
         rpc Position(PositionRequest) returns (PositionResponse);
+        rpc Time(TimeRequest) returns (TimeResponse);
 }

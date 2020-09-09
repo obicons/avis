@@ -78,6 +78,9 @@ func main() {
 		}
 	}()
 
+	fmt.Println("sleeping for a LONG time!")
+	time.Sleep(time.Hour)
+
 	startTime := time.Now()
 	for i := 0; time.Now().Sub(startTime) < time.Second*60; i++ {
 		err = gazebo.Step(context.Background())

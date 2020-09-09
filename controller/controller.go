@@ -59,5 +59,12 @@ func (s *SimulatorController) Step(ctx context.Context, req *StepRequest) (*Step
 
 // Implements RPC
 func (s *SimulatorController) Position(ctx context.Context, req *PositionRequest) (*PositionResponse, error) {
-	return &PositionResponse{}, nil
+	position, err := s.simulator.Position(ctx)
+	return &PositionResponse{X: position.X, Y: position.Y, Z: position.Z}, err
+}
+
+// Implements RPC
+func (s *SimulatorController) Time(ctx context.Context, req *TimeRequest) (*TimeResponse, error) {
+	time, err := s.simulator.SimTime(ctx)
+	return &TimeResponse{TvSec: uint64(time.Second()), TvUSec: uint64(1000 * time.Nanosecond())}, err
 }
