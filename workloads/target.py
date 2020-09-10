@@ -12,6 +12,7 @@ class RAL(ABC):
         self.channel = grpc.insecure_channel(rpc_addr)
         self.stub = simulator_controller_pb2_grpc.SimulatorControllerStub(self.channel)
         self.mav = mavutil.mavlink_connection(mav_addr)
+        self.mav_addr = mav_addr
 
     @property
     @abstractmethod
@@ -96,7 +97,7 @@ class RAL(ABC):
 
         while self.mav == None:
             try:
-                self.mav = mavutil.mavlink_connection(self.address)
+                self.mav = mavutil.mavlink_connection(self.mav_addr)
             except socket.error:
                 sleep(0)
 
@@ -132,26 +133,21 @@ class ArduPilotRAL(RAL):
             self.mav.set_mode('GUIDED')
             self.reset_connection()
             self.recv_heartbeat_and_step()
-            if self.connection.flightmode == 'GUIDED':
+            if self.mav.flightmode == 'GUIDED':
                 break
             sleep(0.1)
 
-    def takeoff(simulation, altitude, pitch=-1,
-            yaw_angle=float('nan'), latitude=float('nan'), longitude=float('nan')):
-        simulation.recv_heartbeat_and_step()
-        mav_autopilot = simulation.connection.field('HEARTBEAT', 'autopilot', None)
-        if mav_autopilot == mavutil.mavlink.MAV_AUTOPILOT_PX4:
-            simulation.connection.param_set_send('MIS_TAKEOFF_ALT', altitude)
-            really_send_command(
-                simulation,
-                mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
-                pitch,
-                0, 0, # empties
-                yaw_angle,
-                latitude,
-                longitude,
-                altitude
-            )
+    def takeoff(self, altitude, pitch=-1,
+                yaw_angle=float('nan'), latitude=float('nan'), longitude=float('nan')):
+        self.really_send_command(
+            mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
+            pitch,
+            0, 0, # empties
+            yaw_angle,
+            latitude,
+            longitude,
+            altitude
+        )
 
 class Target(object):
     '''Target is extended to create new workloads'''

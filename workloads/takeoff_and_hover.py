@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from target import PX4RAL, Target
+from target import ArduPilotRAL, PX4RAL, Target
 
 class TakeoffAndHover(Target):
     def test(self):
@@ -15,6 +15,6 @@ if __name__ == '__main__':
     t = TakeoffAndHover(
         'udp:127.0.0.1:14550',
         'unix:///Users/madmax/.rmck_rpc',
-        PX4RAL
+        ArduPilotRAL
     )
     t.test()
