@@ -38,8 +38,27 @@ message TimeResponse {
         Error error = 4;
 }
 
+message TerminateRequest {
+        bool didPass = 1;
+        string explanation = 2;
+}
+
+message TerminateResponse {
+        // empty for now
+}
+
+message ModeChangeRequest {
+        uint32 nextMode = 1;
+}
+
+message ModeChangeResponse {
+        // empty for now
+}
+
 service SimulatorController {
         rpc Step(StepRequest) returns (StepResponse);
         rpc Position(PositionRequest) returns (PositionResponse);
         rpc Time(TimeRequest) returns (TimeResponse);
+        rpc Terminate(TerminateRequest) returns (TerminateResponse);
+        rpc ModeChange(ModeChangeRequest) returns (ModeChangeResponse);
 }

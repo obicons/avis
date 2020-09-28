@@ -56,19 +56,12 @@ func (px4 *PX4) Start() error {
 	)
 	cmd.Dir = rootFs
 	cmd.Env = px4Environ()
-	// cmd.Stdin = os.Stdin
 
-	logging, err := util.GetLogger("px4")
+	logging, err := util.GetLogger("px4 ")
 	if err != nil {
 		return err
 	}
 
-	// err = util.LogProcess(cmd, logging)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// err = cmd.Start()
 	px4.pty, err = pty.Start(cmd)
 	if err == nil {
 		px4.cmd = cmd
@@ -80,7 +73,7 @@ func (px4 *PX4) Start() error {
 }
 
 // implements System
-func (px4 *PX4) Stop(ctx context.Context) error {
+func (px4 *PX4) Shutdown(ctx context.Context) error {
 	return util.GracefulStop(px4.cmd, ctx)
 }
 

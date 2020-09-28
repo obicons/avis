@@ -10,24 +10,28 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sync"
 	"time"
 
 	"github.com/creack/pty"
+	"github.com/obicons/rmck/entities"
 	"github.com/obicons/rmck/util"
 )
 
-type StepActions func()
-
 type Gazebo struct {
-	ExecutablePath  string
-	Config          *GazeboConfig
-	Logger          *log.Logger
-	Cmd             *exec.Cmd
-	TimePath        string
-	StepPath        string
-	PositionPath    string
-	TotalIterations uint64
-	PTY             *os.File
+	sync.Mutex
+	ExecutablePath           string
+	Config                   *GazeboConfig
+	Logger                   *log.Logger
+	Cmd                      *exec.Cmd
+	TimePath                 string
+	StepPath                 string
+	PositionPath             string
+	TotalIterations          uint64
+	PTY                      *os.File
+	TemporaryPostStepActions []StepActions
+	lastTimeUpdate           int
+	lastTime                 time.Time
 }
 
 type GazeboConfig struct {
@@ -58,7 +62,7 @@ func (gazebo *Gazebo) Start() error {
 	cmd.Env = append(os.Environ(), []string{"DISPLAY=:0", "LC_ALL=C"}...)
 	cmd.Env = append(cmd.Env, gazebo.Config.Env...)
 
-	logging, err := util.GetLogger("gazebo")
+	logging, err := util.GetLogger("gazebo ")
 	if err != nil {
 		return err
 	}
@@ -69,26 +73,40 @@ func (gazebo *Gazebo) Start() error {
 	if err != nil {
 		return err
 	}
+
 	gazebo.PTY = pty
-
 	util.LogReader(pty, logging)
-
 	gazebo.Cmd = cmd
+	gazebo.TotalIterations = 0
 	return nil
 }
 
 // implements sim.Sim
-func (gazebo *Gazebo) Stop(ctx context.Context) error {
+func (gazebo *Gazebo) Shutdown(ctx context.Context) error {
 	if gazebo.Cmd.ProcessState != nil && gazebo.Cmd.ProcessState.Exited() {
 		return fmt.Errorf("Cannot stop gazebo: already exited with status %d", gazebo.Cmd.ProcessState.ExitCode())
 	}
 	util.GracefulStop(gazebo.Cmd, ctx)
 	gazebo.PTY.Close()
+	gazebo.TemporaryPostStepActions = []StepActions{}
+
+	// resets the time cache
+	gazebo.lastTimeUpdate = -1
+
 	return nil
 }
 
 // implements sim.Sim
+// safe to call in multi-threaded environments.
 func (gazebo *Gazebo) SimTime(ctx context.Context) (time.Time, error) {
+	gazebo.Lock()
+	defer gazebo.Unlock()
+
+	// check if we already had this value
+	if foundInCache, time := gazebo.checkTimeCache(); foundInCache {
+		return time, nil
+	}
+
 	done := ctx.Done()
 	tryToConnect := true
 	coolOffPeriod := 10 * time.Millisecond
@@ -106,6 +124,7 @@ func (gazebo *Gazebo) SimTime(ctx context.Context) (time.Time, error) {
 				continue
 			}
 			defer addr.Close()
+
 			// once we have been accepted, we demand fast processesing
 			var bytes []byte
 			addr.SetDeadline(time.Now().Add(time.Millisecond * 100))
@@ -113,10 +132,15 @@ func (gazebo *Gazebo) SimTime(ctx context.Context) (time.Time, error) {
 			if err != nil {
 				break
 			}
+
 			seconds := int64(binary.LittleEndian.Uint64(bytes[0:8]))
 			microseconds := int64(binary.LittleEndian.Uint64(bytes[8:16]))
 			gzTime = time.Unix(seconds, microseconds*1000)
 			tryToConnect = false
+
+			// update the time cache
+			gazebo.lastTime = gzTime
+			gazebo.lastTimeUpdate = int(gazebo.TotalIterations)
 		}
 	}
 	return gzTime, err
@@ -125,14 +149,14 @@ func (gazebo *Gazebo) SimTime(ctx context.Context) (time.Time, error) {
 /// implements sim.Sim
 func (g *Gazebo) Step(ctx context.Context) error {
 	var err error
-	done := ctx.Done()
+	// done := ctx.Done()
 	tryToConnect := true
 	g.doPreStep()
 	for tryToConnect {
 		select {
-		case <-done:
-			err = ctx.Err()
-			tryToConnect = false
+		// case <-done:
+		// 	err = ctx.Err()
+		// 	tryToConnect = false
 		default:
 			addr, err := net.Dial("unix", g.StepPath)
 			if err != nil {
@@ -160,8 +184,8 @@ func (g *Gazebo) Step(ctx context.Context) error {
 }
 
 // implements sim.Sim
-func (g *Gazebo) Position(ctx context.Context) (Position, error) {
-	position := Position{}
+func (g *Gazebo) Position(ctx context.Context) (entities.Position, error) {
+	position := entities.Position{}
 	done := ctx.Done()
 	keepTrying := true
 	for keepTrying {
@@ -187,11 +211,30 @@ func (g *Gazebo) Position(ctx context.Context) (Position, error) {
 			}
 
 			// this should never fail (see the test case in sim_test.go)
+			conn.Close()
 			util.ReadPackedStruct(positionBytes[:], &position)
 			keepTrying = false
 		}
 	}
 	return position, ctx.Err()
+}
+
+// implements sim.Sim
+func (g *Gazebo) AddPostStepAction(action StepActions) {
+	g.TemporaryPostStepActions = append(g.TemporaryPostStepActions, action)
+}
+
+// implements sim.Sim
+// safe to call from a post-step action.
+func (g *Gazebo) Iterations() uint64 {
+	return g.TotalIterations
+}
+
+func (g *Gazebo) checkTimeCache() (bool, time.Time) {
+	if g.lastTimeUpdate != -1 && uint64(g.lastTimeUpdate) == g.TotalIterations {
+		return true, g.lastTime
+	}
+	return false, time.Time{}
 }
 
 func (g *Gazebo) doPreStep() {
@@ -202,6 +245,9 @@ func (g *Gazebo) doPreStep() {
 
 func (g *Gazebo) doPostStep() {
 	for _, action := range g.Config.PostStepActions {
+		action()
+	}
+	for _, action := range g.TemporaryPostStepActions {
 		action()
 	}
 }
@@ -218,5 +264,6 @@ func NewGazeboFromEnv(config *GazeboConfig) (Sim, error) {
 	gazebo.TimePath = path.Join(os.Getenv("HOME"), ".gazebo_time")
 	gazebo.StepPath = path.Join(os.Getenv("HOME"), ".gazebo_world_control")
 	gazebo.PositionPath = path.Join(os.Getenv("HOME"), ".gazebo_position")
+	gazebo.lastTimeUpdate = -1
 	return gazebo, nil
 }

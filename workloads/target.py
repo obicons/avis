@@ -2,13 +2,14 @@
 import grpc
 import simulator_controller_pb2
 import simulator_controller_pb2_grpc
-import time
 from abc import ABC, abstractmethod
 from pymavlink import mavutil
+from time import sleep
 
 # The robot abstraction layer
 class RAL(ABC):
     def __init__(self, mav_addr, rpc_addr):
+        self.address = mav_addr
         self.channel = grpc.insecure_channel(rpc_addr)
         self.stub = simulator_controller_pb2_grpc.SimulatorControllerStub(self.channel)
         self.mav = mavutil.mavlink_connection(mav_addr)
@@ -36,6 +37,12 @@ class RAL(ABC):
         '''Returns the current position'''
         return self.stub.Position(simulator_controller_pb2.PositionRequest())
 
+    def pass_test(self):
+        return self.stub.Terminate(simulator_controller_pb2.TerminateRequest())
+
+    def change_mode(self, mode_no):
+        return self.stub.ModeChange(simulator_controller_pb2.ModeChangeRequest(nextMode=mode_no))
+
     def arm_system(self):
         '''Arms the system for takeoff'''
         verified = False
@@ -47,6 +54,7 @@ class RAL(ABC):
             verified = m is not None \
                 and m.command == mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM \
                 and m.result == mavutil.mavlink.MAV_RESULT_ACCEPTED
+        self.change_mode(0)
 
     def recv_heartbeat_and_step(self):
         message = None
@@ -78,7 +86,7 @@ class RAL(ABC):
                 p7
             )
             self.step()
-            time.sleep(0.01)
+            sleep(0.01)
             m = self.mav.recv_match(
                 type='COMMAND_ACK',
                 blocking=True,
@@ -100,6 +108,25 @@ class RAL(ABC):
             except socket.error:
                 sleep(0)
 
+    def land(self,
+             abort_alt=0,
+             precision_land_mode=0,
+             yaw_angle=float('nan'),
+             latitude=0,
+            longitude=0,
+             ground_altitude=0):
+        '''lands the vehicle at the current location'''
+        self.really_send_command(
+            mavutil.mavlink.MAV_CMD_NAV_LAND,
+            abort_alt,
+            precision_land_mode,
+            0, # empty
+            yaw_angle,
+            latitude,
+            longitude,
+            ground_altitude
+        )
+
 class PX4RAL(RAL):
     def enter_flight_mode(self):
         confirmed = False
@@ -110,6 +137,7 @@ class PX4RAL(RAL):
                 m.command == mavutil.mavlink.MAV_CMD_DO_SET_MODE and \
                 m.result == mavutil.mavlink.MAV_RESULT_ACCEPTED
             self.step()
+        self.change_mode(1)
 
     def takeoff(self, altitude: float, pitch: float=-1,
                 yaw_angle: float=float('nan'), latitude: float=float('nan'), longitude: float=float('nan')):
@@ -124,6 +152,7 @@ class PX4RAL(RAL):
             longitude,
             altitude
         )
+        self.change_mode(2)
 
 class ArduPilotRAL(RAL):
     def enter_flight_mode(self):
@@ -132,26 +161,25 @@ class ArduPilotRAL(RAL):
             self.mav.set_mode('GUIDED')
             self.reset_connection()
             self.recv_heartbeat_and_step()
-            if self.connection.flightmode == 'GUIDED':
+            if self.mav.flightmode == 'GUIDED':
                 break
             sleep(0.1)
+        self.change_mode(1)
 
-    def takeoff(simulation, altitude, pitch=-1,
+    def takeoff(self, altitude, pitch=-1,
             yaw_angle=float('nan'), latitude=float('nan'), longitude=float('nan')):
-        simulation.recv_heartbeat_and_step()
-        mav_autopilot = simulation.connection.field('HEARTBEAT', 'autopilot', None)
-        if mav_autopilot == mavutil.mavlink.MAV_AUTOPILOT_PX4:
-            simulation.connection.param_set_send('MIS_TAKEOFF_ALT', altitude)
-            really_send_command(
-                simulation,
-                mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
-                pitch,
-                0, 0, # empties
-                yaw_angle,
-                latitude,
-                longitude,
-                altitude
-            )
+        self.recv_heartbeat_and_step()
+        mav_autopilot = self.mav.field('HEARTBEAT', 'autopilot', None)
+        self.really_send_command(
+            mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
+            pitch,
+            0, 0, # empties
+            yaw_angle,
+            latitude,
+            longitude,
+            altitude
+        )
+        self.change_mode(2)
 
 class Target(object):
     '''Target is extended to create new workloads'''

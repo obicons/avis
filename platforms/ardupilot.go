@@ -19,6 +19,7 @@ type ArduPilot struct {
 	gazeboSrcPath   string
 	droneSignalPath string
 	cmd             *exec.Cmd
+	mavproxy        *exec.Cmd
 	logger          *log.Logger
 	lastMsgTime     time.Time
 }
@@ -70,39 +71,107 @@ func NewArduPilotFromEnv() (System, error) {
 
 // implements System
 func (a *ArduPilot) Start() error {
-	workDir := path.Join(a.srcPath, "Tools/autotest/")
-
-	cmd := exec.Command(
-		"./sim_vehicle.py", "-f", "gazebo-iris",
-		"--vehicle", "ArduCopter", "--console", "--no-rebuild",
-	)
-	cmd.Dir = workDir
-	cmd.Env = os.Environ()
-
-	// why does this keep us from crashing?
-	cmd.Stdin = os.Stdin
-
-	logging, err := util.GetLogger("ardupilot")
+	err := a.startArduPilot()
 	if err != nil {
 		return err
 	}
 
-	err = util.LogProcess(cmd, logging)
+	err = a.startMAVProxy()
 	if err != nil {
-		return err
-	}
-
-	err = cmd.Start()
-	if err == nil {
-		a.cmd = cmd
+		a.cmd.Process.Kill()
+		a.cmd.Process.Wait()
 	}
 
 	return err
 }
 
+func (a *ArduPilot) startArduPilot() error {
+	workDir := path.Join(a.srcPath)
+	defaultsFlag := path.Join(a.srcPath, "Tools/autotest/default_params/copter.parm") +
+		"," + path.Join(a.srcPath, "Tools/autotest/default_params/gazebo-iris.parm")
+
+	cmd := exec.Command(
+		path.Join(a.srcPath, "build/sitl/bin/arducopter"),
+		"-S",
+		"-I0",
+		"--home",
+		"-35.363261,149.165230,584,353",
+		"--model",
+		"gazebo-iris",
+		"--speedup",
+		"1",
+		"--defaults",
+		defaultsFlag,
+	)
+	cmd.Dir = workDir
+	cmd.Env = os.Environ()
+	cmd.Stdin = os.Stdin
+
+	logging, err := util.GetLogger("ardupilot ")
+	if err != nil {
+		return err
+	}
+
+	if err = util.LogProcess(cmd, logging); err != nil {
+		return err
+	}
+
+	a.cmd = cmd
+
+	return cmd.Start()
+}
+
+func (a *ArduPilot) startMAVProxy() error {
+	workDir := path.Join(a.srcPath, "Tools/autotest/")
+
+	cmd := exec.Command(
+		"./mavproxy.py",
+		"--master",
+		"tcp:127.0.0.1:5760",
+		"--sitl",
+		"127.0.0.1:5501",
+		"--out",
+		"127.0.0.1:14550",
+		"--out",
+		"127.0.0.1:14551",
+		"--console",
+	)
+	cmd.Dir = workDir
+	cmd.Env = os.Environ()
+	cmd.Stdin = os.Stdin
+
+	logging, err := util.GetLogger("mavproxy ")
+	if err != nil {
+		return err
+	}
+
+	if err = util.LogProcess(cmd, logging); err != nil {
+		return err
+	}
+
+	a.mavproxy = cmd
+
+	return cmd.Start()
+}
+
 // implements System
-func (a *ArduPilot) Stop(ctx context.Context) error {
-	return util.GracefulStop(a.cmd, ctx)
+func (a *ArduPilot) Shutdown(ctx context.Context) error {
+	firstErr := a.cmd.Process.Kill()
+	secondErr := a.cmd.Wait()
+	thirdErr := a.mavproxy.Process.Kill()
+	fourthErr := a.mavproxy.Wait()
+
+	if firstErr != nil {
+		return firstErr
+	} else if secondErr != nil {
+		return secondErr
+	} else if thirdErr != nil {
+		return thirdErr
+	} else if fourthErr != nil {
+		return fourthErr
+	}
+
+	return nil
 }
 
 // implements System
