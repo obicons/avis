@@ -13,6 +13,7 @@ class RAL(ABC):
         self.channel = grpc.insecure_channel(rpc_addr)
         self.stub = simulator_controller_pb2_grpc.SimulatorControllerStub(self.channel)
         self.mav = mavutil.mavlink_connection(mav_addr)
+        self.mav_addr = mav_addr
 
     @property
     @abstractmethod
@@ -104,7 +105,7 @@ class RAL(ABC):
 
         while self.mav == None:
             try:
-                self.mav = mavutil.mavlink_connection(self.address)
+                self.mav = mavutil.mavlink_connection(self.mav_addr)
             except socket.error:
                 sleep(0)
 
@@ -167,7 +168,7 @@ class ArduPilotRAL(RAL):
         self.change_mode(1)
 
     def takeoff(self, altitude, pitch=-1,
-            yaw_angle=float('nan'), latitude=float('nan'), longitude=float('nan')):
+                yaw_angle=float('nan'), latitude=float('nan'), longitude=float('nan')):
         self.recv_heartbeat_and_step()
         mav_autopilot = self.mav.field('HEARTBEAT', 'autopilot', None)
         self.really_send_command(
