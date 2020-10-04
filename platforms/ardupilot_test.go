@@ -56,6 +56,8 @@ func TestFunctionalArduPilot(t *testing.T) {
 		t.Fatalf("Start returned an unexpected error: %s", err)
 	}
 
+	time.Sleep(time.Second * 30)
+
 	startTime := time.Now()
 	isRunning := false
 	for !isRunning && time.Now().Sub(startTime) < time.Second*10 {
@@ -68,7 +70,10 @@ func TestFunctionalArduPilot(t *testing.T) {
 
 	ctx, cc := context.WithTimeout(context.Background(), time.Second*5)
 	defer cc()
-	ardupilot.Stop(ctx)
+	err = ardupilot.Stop(ctx)
+	if err != nil {
+		t.Fatalf("ArduCopter could not stop: %s", err)
+	}
 
 	if !ardupilot.cmd.ProcessState.Exited() {
 		t.Fatal("ArduCopter did not successfully stop")

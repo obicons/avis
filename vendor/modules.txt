@@ -15,6 +15,9 @@ github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
+# github.com/mitchellh/hashstructure v1.0.0
+## explicit
+github.com/mitchellh/hashstructure
 # github.com/shirou/gopsutil v2.20.7+incompatible
 ## explicit
 github.com/shirou/gopsutil/cpu

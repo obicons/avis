@@ -1,1 +1,3 @@
 bin/*
+workloads/__pycache__/
+

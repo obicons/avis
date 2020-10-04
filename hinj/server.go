@@ -20,6 +20,11 @@ type HINJServer struct {
 	shutdownAckChan          chan int
 	failureStateBySensorType map[Sensor]map[uint8]bool
 	enableFailureChan        chan SensorFailure
+	gyroReadings             int
+	accelReadings            int
+	gpsReadings              int
+	compassReadings          int
+	baroReadings             int
 }
 
 type URLAddr url.URL
@@ -31,8 +36,11 @@ func NewHINJServer(rawURL string) (*HINJServer, error) {
 	}
 
 	server := HINJServer{
-		Addr:                     (*URLAddr)(tmpURL),
-		shutdownChan:             make(chan int),
+		Addr: (*URLAddr)(tmpURL),
+
+		// this needs to have a buffer to avoid deadlock
+		shutdownChan: make(chan int, 1),
+
 		shutdownAckChan:          make(chan int),
 		enableFailureChan:        make(chan SensorFailure),
 		failureStateBySensorType: make(map[Sensor]map[uint8]bool),
@@ -57,15 +65,49 @@ func (server *HINJServer) Start() error {
 
 // Stops the server.
 // It is an error to call this function on a server that is not running.
+// It is alright to recycle the server after calling this function.
 func (server *HINJServer) Shutdown() {
-	server.Listener.Close()
 	server.shutdownChan <- 0
+	server.Listener.Close()
 	<-server.shutdownAckChan
+	server.reportStats()
+	server.resetFailures()
 }
 
 // Causes all future reads of the provided sensor category and instance to fail.
 func (server *HINJServer) FailSensor(sensorType Sensor, instanceNo uint8) {
+	if server.failureStateBySensorType[sensorType] == nil {
+		server.failureStateBySensorType[sensorType] = make(map[uint8]bool)
+	}
+	server.failureStateBySensorType[sensorType][instanceNo] = true
+}
 
+// Resets the failure state
+func (server *HINJServer) resetFailures() {
+	server.failureStateBySensorType = make(map[Sensor]map[uint8]bool)
+}
+
+func (server *HINJServer) recordStats(msg interface{}) {
+	switch msg.(type) {
+	case *GPSPacket:
+		server.gpsReadings++
+	case *AccelerometerPacket:
+		server.accelReadings++
+	case *GyroscopePacket:
+		server.gyroReadings++
+	case *BarometerPacket:
+		server.baroReadings++
+	case *CompassPacket:
+		server.compassReadings++
+	}
+}
+
+func (server *HINJServer) reportStats() {
+	fmt.Printf("GPS readings: %d\n", server.gpsReadings)
+	fmt.Printf("Accel readings: %d\n", server.accelReadings)
+	fmt.Printf("Gyro readings: %d\n", server.gyroReadings)
+	fmt.Printf("Compass readings: %d\n", server.compassReadings)
+	fmt.Printf("Baro readings: %d\n", server.baroReadings)
 }
 
 func (server *HINJServer) work() {
@@ -77,7 +119,7 @@ func (server *HINJServer) work() {
 			select {
 			case <-server.shutdownChan:
 				keepGoing = false
-				server.shutdownAckChan <- 1
+				continue
 			default:
 				log.Printf("HINJServer.work(): error %s\n", err)
 				continue
@@ -91,6 +133,8 @@ func (server *HINJServer) work() {
 			log.Printf("HINJServer.work(): error: %s\n", err)
 		}
 
+		server.recordStats(msg)
+
 		server.checkAndFail(msg)
 		err = writer.WriteMessage(msg)
 		if err != nil {
@@ -98,6 +142,7 @@ func (server *HINJServer) work() {
 		}
 		conn.Close()
 	}
+	server.shutdownAckChan <- 0
 }
 
 func (server *HINJServer) checkForPendingFailures() {

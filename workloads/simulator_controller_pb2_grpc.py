@@ -29,6 +29,16 @@ class SimulatorControllerStub(object):
                 request_serializer=simulator__controller__pb2.TimeRequest.SerializeToString,
                 response_deserializer=simulator__controller__pb2.TimeResponse.FromString,
                 )
+        self.Terminate = channel.unary_unary(
+                '/controller.SimulatorController/Terminate',
+                request_serializer=simulator__controller__pb2.TerminateRequest.SerializeToString,
+                response_deserializer=simulator__controller__pb2.TerminateResponse.FromString,
+                )
+        self.ModeChange = channel.unary_unary(
+                '/controller.SimulatorController/ModeChange',
+                request_serializer=simulator__controller__pb2.ModeChangeRequest.SerializeToString,
+                response_deserializer=simulator__controller__pb2.ModeChangeResponse.FromString,
+                )
 
 
 class SimulatorControllerServicer(object):
@@ -52,6 +62,18 @@ class SimulatorControllerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Terminate(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ModeChange(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_SimulatorControllerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -69,6 +91,16 @@ def add_SimulatorControllerServicer_to_server(servicer, server):
                     servicer.Time,
                     request_deserializer=simulator__controller__pb2.TimeRequest.FromString,
                     response_serializer=simulator__controller__pb2.TimeResponse.SerializeToString,
+            ),
+            'Terminate': grpc.unary_unary_rpc_method_handler(
+                    servicer.Terminate,
+                    request_deserializer=simulator__controller__pb2.TerminateRequest.FromString,
+                    response_serializer=simulator__controller__pb2.TerminateResponse.SerializeToString,
+            ),
+            'ModeChange': grpc.unary_unary_rpc_method_handler(
+                    servicer.ModeChange,
+                    request_deserializer=simulator__controller__pb2.ModeChangeRequest.FromString,
+                    response_serializer=simulator__controller__pb2.ModeChangeResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -128,5 +160,39 @@ class SimulatorController(object):
         return grpc.experimental.unary_unary(request, target, '/controller.SimulatorController/Time',
             simulator__controller__pb2.TimeRequest.SerializeToString,
             simulator__controller__pb2.TimeResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Terminate(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/controller.SimulatorController/Terminate',
+            simulator__controller__pb2.TerminateRequest.SerializeToString,
+            simulator__controller__pb2.TerminateResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ModeChange(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/controller.SimulatorController/ModeChange',
+            simulator__controller__pb2.ModeChangeRequest.SerializeToString,
+            simulator__controller__pb2.ModeChangeResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

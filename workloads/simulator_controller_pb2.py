@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'Z\013/controller',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x1asimulator_controller.proto\x12\ncontroller\"*\n\x05\x45rror\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x13\n\x0b\x65xplanation\x18\x02 \x01(\t\"\r\n\x0bStepRequest\"B\n\x0cStepResponse\x12 \n\x05\x65rror\x18\x01 \x01(\x0b\x32\x11.controller.Error\x12\x10\n\x08hasError\x18\x02 \x01(\x08\"\x11\n\x0fPositionRequest\"3\n\x10PositionResponse\x12\t\n\x01x\x18\x01 \x01(\x01\x12\t\n\x01y\x18\x02 \x01(\x01\x12\t\n\x01z\x18\x03 \x01(\x01\"\r\n\x0bTimeRequest\"a\n\x0cTimeResponse\x12\r\n\x05tvSec\x18\x01 \x01(\x04\x12\x0e\n\x06tvUSec\x18\x02 \x01(\x04\x12\x10\n\x08hasError\x18\x03 \x01(\x08\x12 \n\x05\x65rror\x18\x04 \x01(\x0b\x32\x11.controller.Error2\xd2\x01\n\x13SimulatorController\x12\x39\n\x04Step\x12\x17.controller.StepRequest\x1a\x18.controller.StepResponse\x12\x45\n\x08Position\x12\x1b.controller.PositionRequest\x1a\x1c.controller.PositionResponse\x12\x39\n\x04Time\x12\x17.controller.TimeRequest\x1a\x18.controller.TimeResponseB\rZ\x0b/controllerb\x06proto3'
+  serialized_pb=b'\n\x1asimulator_controller.proto\x12\ncontroller\"*\n\x05\x45rror\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x13\n\x0b\x65xplanation\x18\x02 \x01(\t\"\r\n\x0bStepRequest\"B\n\x0cStepResponse\x12 \n\x05\x65rror\x18\x01 \x01(\x0b\x32\x11.controller.Error\x12\x10\n\x08hasError\x18\x02 \x01(\x08\"\x11\n\x0fPositionRequest\"3\n\x10PositionResponse\x12\t\n\x01x\x18\x01 \x01(\x01\x12\t\n\x01y\x18\x02 \x01(\x01\x12\t\n\x01z\x18\x03 \x01(\x01\"\r\n\x0bTimeRequest\"a\n\x0cTimeResponse\x12\r\n\x05tvSec\x18\x01 \x01(\x04\x12\x0e\n\x06tvUSec\x18\x02 \x01(\x04\x12\x10\n\x08hasError\x18\x03 \x01(\x08\x12 \n\x05\x65rror\x18\x04 \x01(\x0b\x32\x11.controller.Error\"8\n\x10TerminateRequest\x12\x0f\n\x07\x64idPass\x18\x01 \x01(\x08\x12\x13\n\x0b\x65xplanation\x18\x02 \x01(\t\"\x13\n\x11TerminateResponse\"%\n\x11ModeChangeRequest\x12\x10\n\x08nextMode\x18\x01 \x01(\r\"\x14\n\x12ModeChangeResponse2\xe9\x02\n\x13SimulatorController\x12\x39\n\x04Step\x12\x17.controller.StepRequest\x1a\x18.controller.StepResponse\x12\x45\n\x08Position\x12\x1b.controller.PositionRequest\x1a\x1c.controller.PositionResponse\x12\x39\n\x04Time\x12\x17.controller.TimeRequest\x1a\x18.controller.TimeResponse\x12H\n\tTerminate\x12\x1c.controller.TerminateRequest\x1a\x1d.controller.TerminateResponse\x12K\n\nModeChange\x12\x1d.controller.ModeChangeRequest\x1a\x1e.controller.ModeChangeResponseB\rZ\x0b/controllerb\x06proto3'
 )
 
 
@@ -276,6 +276,127 @@ _TIMERESPONSE = _descriptor.Descriptor(
   serialized_end=353,
 )
 
+
+_TERMINATEREQUEST = _descriptor.Descriptor(
+  name='TerminateRequest',
+  full_name='controller.TerminateRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='didPass', full_name='controller.TerminateRequest.didPass', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='explanation', full_name='controller.TerminateRequest.explanation', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=355,
+  serialized_end=411,
+)
+
+
+_TERMINATERESPONSE = _descriptor.Descriptor(
+  name='TerminateResponse',
+  full_name='controller.TerminateResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=413,
+  serialized_end=432,
+)
+
+
+_MODECHANGEREQUEST = _descriptor.Descriptor(
+  name='ModeChangeRequest',
+  full_name='controller.ModeChangeRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='nextMode', full_name='controller.ModeChangeRequest.nextMode', index=0,
+      number=1, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=434,
+  serialized_end=471,
+)
+
+
+_MODECHANGERESPONSE = _descriptor.Descriptor(
+  name='ModeChangeResponse',
+  full_name='controller.ModeChangeResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=473,
+  serialized_end=493,
+)
+
 _STEPRESPONSE.fields_by_name['error'].message_type = _ERROR
 _TIMERESPONSE.fields_by_name['error'].message_type = _ERROR
 DESCRIPTOR.message_types_by_name['Error'] = _ERROR
@@ -285,6 +406,10 @@ DESCRIPTOR.message_types_by_name['PositionRequest'] = _POSITIONREQUEST
 DESCRIPTOR.message_types_by_name['PositionResponse'] = _POSITIONRESPONSE
 DESCRIPTOR.message_types_by_name['TimeRequest'] = _TIMEREQUEST
 DESCRIPTOR.message_types_by_name['TimeResponse'] = _TIMERESPONSE
+DESCRIPTOR.message_types_by_name['TerminateRequest'] = _TERMINATEREQUEST
+DESCRIPTOR.message_types_by_name['TerminateResponse'] = _TERMINATERESPONSE
+DESCRIPTOR.message_types_by_name['ModeChangeRequest'] = _MODECHANGEREQUEST
+DESCRIPTOR.message_types_by_name['ModeChangeResponse'] = _MODECHANGERESPONSE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 Error = _reflection.GeneratedProtocolMessageType('Error', (_message.Message,), {
@@ -336,6 +461,34 @@ TimeResponse = _reflection.GeneratedProtocolMessageType('TimeResponse', (_messag
   })
 _sym_db.RegisterMessage(TimeResponse)
 
+TerminateRequest = _reflection.GeneratedProtocolMessageType('TerminateRequest', (_message.Message,), {
+  'DESCRIPTOR' : _TERMINATEREQUEST,
+  '__module__' : 'simulator_controller_pb2'
+  # @@protoc_insertion_point(class_scope:controller.TerminateRequest)
+  })
+_sym_db.RegisterMessage(TerminateRequest)
+
+TerminateResponse = _reflection.GeneratedProtocolMessageType('TerminateResponse', (_message.Message,), {
+  'DESCRIPTOR' : _TERMINATERESPONSE,
+  '__module__' : 'simulator_controller_pb2'
+  # @@protoc_insertion_point(class_scope:controller.TerminateResponse)
+  })
+_sym_db.RegisterMessage(TerminateResponse)
+
+ModeChangeRequest = _reflection.GeneratedProtocolMessageType('ModeChangeRequest', (_message.Message,), {
+  'DESCRIPTOR' : _MODECHANGEREQUEST,
+  '__module__' : 'simulator_controller_pb2'
+  # @@protoc_insertion_point(class_scope:controller.ModeChangeRequest)
+  })
+_sym_db.RegisterMessage(ModeChangeRequest)
+
+ModeChangeResponse = _reflection.GeneratedProtocolMessageType('ModeChangeResponse', (_message.Message,), {
+  'DESCRIPTOR' : _MODECHANGERESPONSE,
+  '__module__' : 'simulator_controller_pb2'
+  # @@protoc_insertion_point(class_scope:controller.ModeChangeResponse)
+  })
+_sym_db.RegisterMessage(ModeChangeResponse)
+
 
 DESCRIPTOR._options = None
 
@@ -346,8 +499,8 @@ _SIMULATORCONTROLLER = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=356,
-  serialized_end=566,
+  serialized_start=496,
+  serialized_end=857,
   methods=[
   _descriptor.MethodDescriptor(
     name='Step',
@@ -376,6 +529,26 @@ _SIMULATORCONTROLLER = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_TIMEREQUEST,
     output_type=_TIMERESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='Terminate',
+    full_name='controller.SimulatorController.Terminate',
+    index=3,
+    containing_service=None,
+    input_type=_TERMINATEREQUEST,
+    output_type=_TERMINATERESPONSE,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='ModeChange',
+    full_name='controller.SimulatorController.ModeChange',
+    index=4,
+    containing_service=None,
+    input_type=_MODECHANGEREQUEST,
+    output_type=_MODECHANGERESPONSE,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
