@@ -11,7 +11,7 @@ type System interface {
 	Start() error
 
 	// stops the autopilot
-	Stop(ctx context.Context) error
+	Shutdown(ctx context.Context) error
 
 	// Gets the gazebo configuration.
 	// If gazebo is unsupported, return an error.

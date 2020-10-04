@@ -15,6 +15,8 @@ type SimulatorController struct {
 	grpcServer *grpc.Server
 	simulator  sim.Sim
 	listener   net.Listener
+	shutdownCh chan int
+	modeCh     chan int
 }
 
 func New(addrStr string, simulator sim.Sim) (*SimulatorController, error) {
@@ -25,6 +27,8 @@ func New(addrStr string, simulator sim.Sim) (*SimulatorController, error) {
 		return nil, err
 	}
 	server.simulator = simulator
+	server.shutdownCh = make(chan int)
+	server.modeCh = make(chan int)
 	return &server, nil
 
 }
@@ -44,9 +48,19 @@ func (server *SimulatorController) Start() error {
 	return server.grpcServer.Serve(server.listener)
 }
 
+// Returns a channel to receive mode changes from
+func (server *SimulatorController) Mode() <-chan int {
+	return server.modeCh
+}
+
+// Returns a channel to receieve shutdown requests from.
+func (server *SimulatorController) Done() <-chan int {
+	return server.shutdownCh
+}
+
 // Stops the SimulatorController.
 // It is an error to call this method if server has not been started.
-func (server *SimulatorController) Stop() {
+func (server *SimulatorController) Shutdown() {
 	server.grpcServer.GracefulStop()
 	server.listener.Close()
 }
@@ -67,4 +81,16 @@ func (s *SimulatorController) Position(ctx context.Context, req *PositionRequest
 func (s *SimulatorController) Time(ctx context.Context, req *TimeRequest) (*TimeResponse, error) {
 	time, err := s.simulator.SimTime(ctx)
 	return &TimeResponse{TvSec: uint64(time.Second()), TvUSec: uint64(1000 * time.Nanosecond())}, err
+}
+
+// Implements RPC
+func (s *SimulatorController) Terminate(ctx context.Context, req *TerminateRequest) (*TerminateResponse, error) {
+	s.shutdownCh <- 1
+	return &TerminateResponse{}, nil
+}
+
+// Implements RPC
+func (s *SimulatorController) ModeChange(ctx context.Context, req *ModeChangeRequest) (*ModeChangeResponse, error) {
+	s.modeCh <- int(req.NextMode)
+	return &ModeChangeResponse{}, nil
 }

@@ -29,7 +29,7 @@ func WaitWithContext(ctx context.Context, cmd *exec.Cmd) error {
 		case <-done:
 			return ctx.Err()
 		default:
-			isRunning, err := proc.IsRunning()
+			isRunning, err = proc.IsRunning()
 			if err != nil {
 				return err
 			} else if isRunning {
@@ -67,7 +67,7 @@ func GracefulStop(cmd *exec.Cmd, ctx context.Context) error {
 	nctx, cc := context.WithTimeout(ctx, time.Second)
 	defer cc()
 	if err := WaitWithContext(nctx, cmd); err == nil {
-		return fmt.Errorf("GracefulStop(): Wait: %s", err)
+		return nil
 	}
 
 	if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
@@ -84,4 +84,23 @@ func GracefulStop(cmd *exec.Cmd, ctx context.Context) error {
 	}
 
 	return cmd.Wait()
+}
+
+func KillAll(pid int32) error {
+	proc, err := process.NewProcess(pid)
+	if err != nil {
+		return err
+	}
+
+	children, err := proc.Children()
+	if err != nil {
+		return err
+	}
+
+	for _, child := range children {
+		fmt.Println(child)
+		KillAll(child.Pid)
+	}
+
+	return proc.Kill()
 }

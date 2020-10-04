@@ -3,18 +3,18 @@ package sim
 import (
 	"context"
 	"time"
+
+	"github.com/obicons/rmck/entities"
 )
+
+type StepActions func()
 
 type Sim interface {
 	Start() error
-	Stop(ctx context.Context) error
+	Shutdown(ctx context.Context) error
 	Step(ctx context.Context) error
 	SimTime(ctx context.Context) (time.Time, error)
-	Position(ctx context.Context) (Position, error)
-}
-
-type Position struct {
-	X float64
-	Y float64
-	Z float64
+	Position(ctx context.Context) (entities.Position, error)
+	AddPostStepAction(action StepActions)
+	Iterations() uint64
 }
