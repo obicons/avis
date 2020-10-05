@@ -60,16 +60,17 @@ func main() {
 // called to perform a profile run and start the model checking process
 func performModelChecking() {
 	system := getAutoPilot(*autopilot)
-	hinj, err := hinj.NewHINJServer(getHINJAddr())
-	if err != nil {
-		log.Fatalf("Could not create a new HINJ server: %s\n", err)
-	}
 
 	config, _ := system.GetGazeboConfig()
 
 	gazebo, err := sim.NewGazeboFromEnv(config)
 	if err != nil {
 		log.Fatalf("Could not get a gazebo instance: %s\n", err)
+	}
+
+	hinj, err := hinj.NewHINJServer(getHINJAddr(), gazebo)
+	if err != nil {
+		log.Fatalf("Could not create a new HINJ server: %s\n", err)
 	}
 
 	workloadCmd, err := parseWorkloadTemplate(*autopilot, *workloadCmd)
@@ -102,14 +103,15 @@ func performModelChecking() {
 		log.Fatalf("Error executing: %s\n", err)
 	}
 
-	doModelChecking(
-		hinj,
-		gazebo,
-		system,
-		workloadCmd,
-		positionRecorder.(*detector.PositionRecorder).GetPositions(),
-		modeChangeTimes,
-	)
+	// removed for data collection
+	// doModelChecking(
+	// 	hinj,
+	// 	gazebo,
+	// 	system,
+	// 	workloadCmd,
+	// 	positionRecorder.(*detector.PositionRecorder).GetPositions(),
+	// 	modeChangeTimes,
+	// )
 }
 
 // performs a replay
@@ -127,16 +129,16 @@ func performReplay() {
 	}
 
 	system := getAutoPilot(*autopilot)
-	hinj, err := hinj.NewHINJServer(getHINJAddr())
-	if err != nil {
-		log.Fatalf("Could not create a new HINJ server: %s\n", err)
-	}
-
 	config, _ := system.GetGazeboConfig()
 
 	gazebo, err := sim.NewGazeboFromEnv(config)
 	if err != nil {
 		log.Fatalf("Could not get a gazebo instance: %s\n", err)
+	}
+
+	hinj, err := hinj.NewHINJServer(getHINJAddr(), gazebo)
+	if err != nil {
+		log.Fatalf("Could not create a new HINJ server: %s\n", err)
 	}
 
 	workloadCmd, err := parseWorkloadTemplate(*autopilot, *workloadCmd)

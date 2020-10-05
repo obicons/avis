@@ -1,4 +1,6 @@
 bin/*
 workloads/__pycache__/
 bugs/
+data/*.json
+
 
