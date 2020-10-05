@@ -2,9 +2,12 @@ package executor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
+	"strconv"
 	"time"
 
 	"github.com/obicons/rmck/controller"
@@ -32,6 +35,7 @@ type Executor struct {
 	Detectors          []detector.Detector
 	ModeChangeHandler  func(totalIterations uint64, modeNumber int)
 	MissionFailurePlan []FailurePlan
+	OutputLocation     string
 	rpcServer          *controller.SimulatorController
 }
 
@@ -125,7 +129,17 @@ func (e *Executor) Execute() error {
 			fmt.Println("Successfully exited")
 			keepGoing = false
 		case anomaly := <-anomalyChan:
+			ts := time.Now()
 			fmt.Printf("Anomaly detected: %s\n", anomaly.String())
+			outputFilePath := path.Join(e.OutputLocation, strconv.FormatInt(ts.Unix(), 10))
+			file, err := os.Create(outputFilePath)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error saving trace: %s\n", err)
+			} else {
+				encoder := json.NewEncoder(file)
+				encoder.Encode(e.MissionFailurePlan)
+				file.Close()
+			}
 			keepGoing = false
 		}
 	}
