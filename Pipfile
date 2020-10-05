@@ -8,6 +8,9 @@ verify_ssl = true
 [packages]
 grpcio-tools = "*"
 pymavlink = "*"
+numpy = "*"
+pandas = "*"
+seaborn = "*"
 
 [requires]
 python_version = "3.7"
