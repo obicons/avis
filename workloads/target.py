@@ -26,6 +26,19 @@ class RAL(ABC):
                 yaw_angle: float=float('nan'), latitude: float=float('nan'), longitude: float=float('nan')):
         raise AttributeError('takeoff() must be implemented')
 
+    @property
+    @abstractmethod
+    def takeoff_mission_items(self, altitude_m: float, home_lat: float,
+                              home_long: float, home_alt: float):
+        '''returns a sequence of mission items that execute a takeoff'''
+        raise AttributeError('takeoff_mission_items() must be implemented')
+
+    @property
+    @abstractmethod
+    def enter_auto_mode(self):
+        '''enters autonomous mode'''
+        raise AttributeError('enter_auto_mode() must be implemented')
+
     def time(self):
         '''Returns the current time of simulation'''
         return self.stub.Time(simulator_controller_pb2.TimeRequest())
@@ -128,6 +141,75 @@ class RAL(ABC):
             ground_altitude
         )
 
+    def upload_mission(self, missions):
+        '''uploads the specified mission items'''
+        req = None
+        satisfied = [False] * len(missions)
+        while req is None:
+            self.mav.waypoint_count_send(len(missions))
+            req = self.mav.recv_match(
+                type='MISSION_REQUEST',
+                blocking=True,
+                timeout=0.01
+            )
+            if req is None:
+                self.step()
+        while not all(satisfied):
+            seq = req.seq
+            self.mav.mav.mission_item_send(
+                self.mav.target_system,
+                self.mav.target_component,
+                seq,
+                missions[seq]['frame'],
+                missions[seq]['command'],
+                0,
+                1,
+                missions[seq]['param1'],
+                missions[seq]['param2'],
+                missions[seq]['param3'],
+                missions[seq]['param4'],
+                missions[seq]['x'],
+                missions[seq]['y'],
+                missions[seq]['z'],
+                missions[seq]['mission_type'],            
+            )
+            satisfied[req.seq] = True
+            req = None
+            req = self.mav.recv_match(
+                type='MISSION_REQUEST',
+                blocking=True,
+                timeout=0.01
+            )
+            if req is not None:
+                satisfied[req.seq] = False
+            while not all(satisfied) and req is None:
+                req = self.mav.recv_match(
+                    type='MISSION_REQUEST',
+                    blocking=True,
+                    timeout=0.01
+                )
+                self.step()        
+
+    def wait_gps_fix(self, timeout=0):
+        self.mav.recv_match(type='VFR_HUD', blocking=True, timeout=timeout)
+        m = None
+        if self.mav.mavlink10():
+            m = self.mav.recv_match(
+                type='GPS_RAW_INT',
+                blocking=True,
+                condition='GPS_RAW_INT.fix_type>=3 and GPS_RAW_INT.lat != 0',
+                timeout=timeout
+            )
+        else:
+            m = self.mav.recv_match(
+                type='GPS_RAW',
+                blocking=True,
+                condition='GPS_RAW.fix_type>=2 and GPS_RAW.lat != 0',
+                timeout=timeout
+            )
+        return m is not None
+
+
 class PX4RAL(RAL):
     def enter_flight_mode(self):
         confirmed = False
@@ -155,6 +237,34 @@ class PX4RAL(RAL):
         )
         self.change_mode(2)
 
+    def takeoff_mission_items(self, altitude_m: float, home_lat: float,
+                              home_long: float, home_alt: float):
+        '''returns a sequence of mission items that execute a takeoff'''
+        return [
+            {
+                'frame': mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+                'command': mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
+                'param1': 0,
+                'param2': 0,
+                'param3': 0,
+                'param4': float('nan'),
+                'x': home_lat,
+                'y': home_long,
+                'z': altitude_m,
+                'mission_type': mavutil.mavlink.MAV_MISSION_TYPE_MISSION,
+            }
+        ]
+
+    def enter_auto_mode(self):
+        confirmed = False
+        while not confirmed:
+            self.mav.set_mode('MISSION', 'OFFBOARD')
+            m = self.mav.recv_match(type='COMMAND_ACK', blocking=True, timeout=0.1)
+            confirmed = m is not None and \
+                m.command == mavutil.mavlink.MAV_CMD_DO_SET_MODE and \
+                m.result == mavutil.mavlink.MAV_RESULT_ACCEPTED
+            self.step()
+
 class ArduPilotRAL(RAL):
     def enter_flight_mode(self):
         while True:
@@ -181,6 +291,46 @@ class ArduPilotRAL(RAL):
             altitude
         )
         self.change_mode(2)
+
+    def takeoff_mission_items(self, altitude_m: float, home_lat: float,
+                              home_long: float, home_alt: float):
+        '''returns a sequence of mission items that execute a takeoff'''
+        return [
+            {
+                'frame': mavutil.mavlink.MAV_FRAME_GLOBAL,
+                'command': mavutil.mavlink.MAV_CMD_NAV_WAYPOINT,
+                'param1': 0,
+                'param2': 0,
+                'param3': 0,
+                'param4': 0,
+                'x': home_lat,
+                'y': home_long,
+                'z': home_alt,
+                'mission_type': mavutil.mavlink.MAV_MISSION_TYPE_MISSION,
+            },
+            {
+                'frame': mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
+                'command': mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
+                'param1': 0,
+                'param2': 0,
+                'param3': 0,
+                'param4': 0,
+                'x': home_lat,
+                'y': home_long,
+                'z': altitude_m,
+                'mission_type': mavutil.mavlink.MAV_MISSION_TYPE_MISSION,
+            },
+        ]
+
+    def enter_auto_mode(self):
+        confirmed = False
+        while not confirmed:
+            self.mav.set_mode_auto()
+            m = self.mav.recv_match(type='COMMAND_ACK', blocking=True, timeout=0.1)
+            confirmed = m is not None and \
+                        m.command == mavutil.mavlink.MAV_CMD_MISSION_START and \
+                        m.result == 0
+            self.step()
 
 class Target(object):
     '''Target is extended to create new workloads'''
