@@ -110,6 +110,17 @@ func (e *Executor) Execute() error {
 		},
 	)
 
+	positionMap := make(map[uint64]entities.Position)
+	e.Simulator.AddPostStepAction(
+		func() {
+			its := e.Simulator.Iterations()
+			pos, err := e.Simulator.Position(context.Background())
+			if err == nil {
+				positionMap[its] = pos
+			}
+		},
+	)
+
 	time.Sleep(time.Second * 10)
 
 	cmd := executeWorkload(e.WorkloadCmd)
@@ -143,6 +154,15 @@ func (e *Executor) Execute() error {
 			keepGoing = false
 		}
 	}
+
+	file, err := os.Create("data/position.json")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	encoder := json.NewEncoder(file)
+	encoder.Encode(positionMap)
+
 	return nil
 }
 
