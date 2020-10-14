@@ -135,6 +135,21 @@ def compass_json_to_pd(json_data, total_iterations):
         ]
     )
 
+def accel_integral(accel_pd):
+    # off, but by a constant factor (ok for correlation)
+    copy = accel_pd.copy()
+    arr = copy.to_numpy()
+    for i in range(copy.shape[0] - 1):
+        arr[i+1] += arr[i]
+    return pd.DataFrame(
+        data=arr,
+        columns=[
+            'Accel.VelX',
+            'Accel.VelY',
+            'Accel.VelZ',
+        ]
+    )
+
 if __name__ == '__main__':
     gps_data = read_file(GPS_FILENAME)
     accel_data = read_file(ACCEL_FILENAME)
@@ -155,11 +170,13 @@ if __name__ == '__main__':
     gyro_pd = gyro_json_to_pd(gyro_data, total_iterations)
     baro_pd = baro_json_to_pd(baro_data, total_iterations)
     compass_pd = compass_json_to_pd(compass_data, total_iterations)
+    accel_vel_pd = accel_integral(accel_pd)
 
     all_var_pd = pd.concat(
         [
             gps_pd,
             accel_pd,
+            accel_vel_pd,
             gyro_pd,
             baro_pd,
             compass_pd,
