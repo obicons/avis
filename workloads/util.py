@@ -18,4 +18,4 @@ def get_RAL() -> type:
     return RALS[platform]
 
 def get_rpc_addr() -> str:
-    return os.path.join(os.getenv('HOME'), '.rmck_rpc')
+    return 'unix://' + os.path.join(os.getenv('HOME'), '.rmck_rpc')
