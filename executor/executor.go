@@ -37,6 +37,7 @@ type Executor struct {
 	MissionFailurePlan []FailurePlan
 	OutputLocation     string
 	rpcServer          *controller.SimulatorController
+	MissionSuccessful  bool
 }
 
 func (e *Executor) Execute() error {
@@ -126,8 +127,8 @@ func (e *Executor) Execute() error {
 	for keepGoing {
 		select {
 		case <-rpcDone:
-			fmt.Println("Successfully exited")
 			keepGoing = false
+			e.MissionSuccessful = true
 		case anomaly := <-anomalyChan:
 			ts := time.Now()
 			fmt.Printf("Anomaly detected: %s\n", anomaly.String())
@@ -140,6 +141,7 @@ func (e *Executor) Execute() error {
 				encoder.Encode(e.MissionFailurePlan)
 				file.Close()
 			}
+			e.MissionSuccessful = false
 			keepGoing = false
 		}
 	}
