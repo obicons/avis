@@ -21,7 +21,7 @@ class TakeoffAndHover(Target):
 if __name__ == '__main__':
     t = TakeoffAndHover(
         'udp:127.0.0.1:14550',
-        'unix:///Users/madmax/.rmck_rpc',
+        get_rpc_addr(),
         get_RAL()
     )
     t.test()
