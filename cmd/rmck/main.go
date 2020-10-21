@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -28,13 +29,37 @@ var (
 	autopilot              = flag.String("autopilot", "", "Autopilot to test (ardupilot or px4)")
 	workloadCmd            = flag.String("workload.cmd", "", "Command of workload (accepts a Go template)")
 	workloadTimeoutSeconds = flag.Uint("workload.timeout", 300, "Timeout of workload (seconds)")
+	inReplay               = flag.Bool("replay", false, "Perform a replay (requires replay.path to be setup)")
+	replayPath             = flag.String("replay.path", "", "Path to a file containing a trace to replay")
+	outputLocation         = flag.String("output", getOutputLocation(), "")
 )
 
 func main() {
 	flag.Parse()
 
-	system := getAutoPilot(*autopilot)
+	if *inReplay {
+		if *replayPath == "" {
+			fmt.Fprintf(os.Stderr, "error: -replay.path must be specified with -replay.\n")
+			os.Exit(1)
+		} else if info, err := os.Stat(*replayPath); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %s\n", err)
+			os.Exit(1)
+		} else if info.IsDir() {
+			fmt.Fprintf(os.Stderr, "error: %s is not a file\n", *replayPath)
+			os.Exit(1)
+		}
+		performReplay()
+	} else {
+		if _, err := os.Stat(*outputLocation); err != nil {
+			os.Mkdir(*outputLocation, 0777)
+		}
+		performModelChecking()
+	}
+}
 
+// called to perform a profile run and start the model checking process
+func performModelChecking() {
+	system := getAutoPilot(*autopilot)
 	hinj, err := hinj.NewHINJServer(getHINJAddr())
 	if err != nil {
 		log.Fatalf("Could not create a new HINJ server: %s\n", err)
@@ -87,6 +112,58 @@ func main() {
 	)
 }
 
+// performs a replay
+func performReplay() {
+	var failurePlan []executor.FailurePlan
+	file, err := os.Open(*replayPath)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+	if err = decoder.Decode(&failurePlan); err != nil {
+		panic(err)
+	}
+
+	system := getAutoPilot(*autopilot)
+	hinj, err := hinj.NewHINJServer(getHINJAddr())
+	if err != nil {
+		log.Fatalf("Could not create a new HINJ server: %s\n", err)
+	}
+
+	config, _ := system.GetGazeboConfig()
+
+	gazebo, err := sim.NewGazeboFromEnv(config)
+	if err != nil {
+		log.Fatalf("Could not get a gazebo instance: %s\n", err)
+	}
+
+	workloadCmd, err := parseWorkloadTemplate(*autopilot, *workloadCmd)
+	if err != nil {
+		log.Fatalf("Could not parse workload command: %s\n", err)
+	}
+
+	ex := executor.Executor{
+		HINJServer:  hinj,
+		Simulator:   gazebo,
+		Autopilot:   system,
+		WorkloadCmd: workloadCmd,
+		Timeout:     time.Duration(*workloadTimeoutSeconds) * time.Second,
+		RPCAddr:     *rpcAddr,
+		Detectors: []detector.Detector{
+			detector.NewTimeoutDetector(time.Duration(*workloadTimeoutSeconds) * time.Second),
+			detector.NewFreeFallDetector(),
+		},
+		ModeChangeHandler:  func(totalIterations uint64, modeNumber int) {},
+		MissionFailurePlan: failurePlan,
+	}
+	if err = ex.Execute(); err != nil {
+		panic(err)
+	}
+
+}
+
 // does the actual checking
 func doModelChecking(hinjServer *hinj.HINJServer,
 	sim sim.Sim,
@@ -129,6 +206,7 @@ func doModelChecking(hinjServer *hinj.HINJServer,
 			},
 			ModeChangeHandler:  recordModeChanges,
 			MissionFailurePlan: nextFailurePlan,
+			OutputLocation:     *outputLocation,
 		}
 		if err := ex.Execute(); err != nil {
 			log.Fatalf("Error executing: %s\n", err)
@@ -266,6 +344,14 @@ func getRPCAddr() string {
 		}
 	}
 	return "unix://" + path
+}
+
+func getOutputLocation() string {
+	wd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	return path.Join(wd, "bugs/")
 }
 
 func getAutoPilot(autopilotName string) platforms.System {
