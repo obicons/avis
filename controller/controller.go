@@ -61,7 +61,7 @@ func (server *SimulatorController) Done() <-chan int {
 // Stops the SimulatorController.
 // It is an error to call this method if server has not been started.
 func (server *SimulatorController) Shutdown() {
-	server.grpcServer.GracefulStop()
+	server.grpcServer.Stop()
 	server.listener.Close()
 }
 
