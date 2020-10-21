@@ -11,6 +11,8 @@ pymavlink = "*"
 numpy = "*"
 pandas = "*"
 seaborn = "*"
+sklearn = "*"
+scipy = "*"
 
 [requires]
 python_version = "3.7"

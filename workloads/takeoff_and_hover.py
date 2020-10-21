@@ -5,11 +5,15 @@ from util import *
 class TakeoffAndHover(Target):
     def test(self):
         time = self.time()
-        while time.tvSec < 40:
+        print('running for 40 seconds', flush=True)
+        while time.tvSec < 45:
             self.step()
             time = self.time()
+        print('entering flight mode', flush=True)
         self.enter_flight_mode()
+        print('arming system', flush=True)
         self.arm_system()
+        print('taking off', flush=True)
         self.takeoff(20)
         while abs(20 - self.position().z) > 2:
             self.step()
