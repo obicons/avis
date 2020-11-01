@@ -12,3 +12,12 @@ type TimestampedPosition struct {
 	Position Position
 	Time     time.Time
 }
+
+type SensorTraceParameters struct {
+	TraceSensors         bool
+	AccelTraceOutput     string
+	GPSTraceOutput       string
+	GyroTraceOutput      string
+	CompassTraceOutput   string
+	BarometerTraceOutput string
+}
