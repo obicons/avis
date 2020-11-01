@@ -25,6 +25,11 @@ type HINJServer struct {
 	gpsReadings              int
 	compassReadings          int
 	baroReadings             int
+	lastAccelReading         AccelerometerPacket
+	lastGPSReading           GPSPacket
+	lastGyroReading          GyroscopePacket
+	lastCompassReading       CompassPacket
+	lastBaroReading          BarometerPacket
 }
 
 type URLAddr url.URL
@@ -87,18 +92,43 @@ func (server *HINJServer) resetFailures() {
 	server.failureStateBySensorType = make(map[Sensor]map[uint8]bool)
 }
 
+func (server *HINJServer) GetLastAccelReading() AccelerometerPacket {
+	return server.lastAccelReading
+}
+
+func (server *HINJServer) GetLastGPSReading() GPSPacket {
+	return server.lastGPSReading
+}
+
+func (server *HINJServer) GetLastGyroReading() GyroscopePacket {
+	return server.lastGyroReading
+}
+
+func (server *HINJServer) GetLastCompassReading() CompassPacket {
+	return server.lastCompassReading
+}
+
+func (server *HINJServer) GetLastBarometerReading() BarometerPacket {
+	return server.lastBaroReading
+}
+
 func (server *HINJServer) recordStats(msg interface{}) {
 	switch msg.(type) {
 	case *GPSPacket:
 		server.gpsReadings++
+		server.lastGPSReading = *(msg.(*GPSPacket))
 	case *AccelerometerPacket:
 		server.accelReadings++
+		server.lastAccelReading = *(msg.(*AccelerometerPacket))
 	case *GyroscopePacket:
 		server.gyroReadings++
+		server.lastGyroReading = *(msg.(*GyroscopePacket))
 	case *BarometerPacket:
 		server.baroReadings++
+		server.lastBaroReading = *(msg.(*BarometerPacket))
 	case *CompassPacket:
 		server.compassReadings++
+		server.lastCompassReading = *(msg.(*CompassPacket))
 	}
 }
 

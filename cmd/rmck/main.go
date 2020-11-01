@@ -36,15 +36,21 @@ type stats struct {
 }
 
 var (
-	rpcAddr                      = flag.String("rpc.addr", getRPCAddr(), "URL of RPC server")
-	autopilot                    = flag.String("autopilot", "", "Autopilot to test (ardupilot or px4)")
-	workloadCmd                  = flag.String("workload.cmd", "", "Command of workload (accepts a Go template)")
-	workloadTimeoutSeconds       = flag.Uint("workload.timeout", 300, "Timeout of workload (seconds)")
-	inReplay                     = flag.Bool("replay", false, "Perform a replay (requires replay.path to be setup)")
-	replayPath                   = flag.String("replay.path", "", "Path to a file containing a trace to replay")
-	outputLocation               = flag.String("output", getOutputLocation(), "")
-	signals                      = make(chan os.Signal, 1)
-	statistics             stats = stats{}
+	rpcAddr                       = flag.String("rpc.addr", getRPCAddr(), "URL of RPC server")
+	autopilot                     = flag.String("autopilot", "", "Autopilot to test (ardupilot or px4)")
+	workloadCmd                   = flag.String("workload.cmd", "", "Command of workload (accepts a Go template)")
+	workloadTimeoutSeconds        = flag.Uint("workload.timeout", 300, "Timeout of workload (seconds)")
+	inReplay                      = flag.Bool("replay", false, "Perform a replay (requires replay.path to be setup)")
+	replayPath                    = flag.String("replay.path", "", "Path to a file containing a trace to replay")
+	outputLocation                = flag.String("output", getOutputLocation(), "")
+	doSensorTrace                 = flag.Bool("sensor.trace", false, "record the outputs of sensors")
+	accelOutputLocation           = flag.String("sensor.accel.output", getSensorOutputLocation("accel"), "")
+	gpsOutputLocation             = flag.String("sensor.gps.output", getSensorOutputLocation("gps"), "")
+	gyroOutputLocation            = flag.String("sensor.gyro.output", getSensorOutputLocation("gyro"), "")
+	compassOutputLocation         = flag.String("sensor.compass.output", getSensorOutputLocation("compass"), "")
+	barometerOutputLocation       = flag.String("sensor.barometer.output", getSensorOutputLocation("barometer"), "")
+	signals                       = make(chan os.Signal, 1)
+	statistics              stats = stats{}
 )
 
 func main() {
@@ -130,6 +136,14 @@ func performModelChecking() {
 			detector.NewFreeFallDetector(),
 		},
 		ModeChangeHandler: recordModeChanges,
+		TraceParameters: entities.SensorTraceParameters{
+			TraceSensors:         *doSensorTrace,
+			AccelTraceOutput:     *accelOutputLocation,
+			GPSTraceOutput:       *gpsOutputLocation,
+			GyroTraceOutput:      *gyroOutputLocation,
+			CompassTraceOutput:   *compassOutputLocation,
+			BarometerTraceOutput: *barometerOutputLocation,
+		},
 	}
 
 	log.Println("Performing a dry run...")
@@ -510,4 +524,12 @@ func parseWorkloadTemplate(autopilotName, workloadCmd string) (string, error) {
 	}
 
 	return builder.String(), nil
+}
+
+func getSensorOutputLocation(sensorName string) string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	return path.Join(cwd, fmt.Sprintf("data/%s.json", sensorName))
 }
