@@ -71,6 +71,26 @@ func main() {
 	}
 }
 
+	if *inReplay {
+		if *replayPath == "" {
+			fmt.Fprintf(os.Stderr, "error: -replay.path must be specified with -replay.\n")
+			os.Exit(1)
+		} else if info, err := os.Stat(*replayPath); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %s\n", err)
+			os.Exit(1)
+		} else if info.IsDir() {
+			fmt.Fprintf(os.Stderr, "error: %s is not a file\n", *replayPath)
+			os.Exit(1)
+		}
+		performReplay()
+	} else {
+		if _, err := os.Stat(*outputLocation); err != nil {
+			os.Mkdir(*outputLocation, 0777)
+		}
+		performModelChecking()
+	}
+}
+
 // called to perform a profile run and start the model checking process
 func performModelChecking() {
 	system := getAutoPilot(*autopilot)
