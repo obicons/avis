@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path"
 	"strings"
+	"syscall"
 	"text/template"
 	"time"
 
@@ -24,18 +26,50 @@ type workloadInfo struct {
 	AutopilotName string
 }
 
+type stats struct {
+	totalUnsafe       uint
+	unsafeFromGPS     uint
+	unsafeFromBaros   uint
+	unsafeFromAccel   uint
+	unsafeFromCompass uint
+	unsafeFromGyro    uint
+}
+
 var (
-	rpcAddr                = flag.String("rpc.addr", getRPCAddr(), "URL of RPC server")
-	autopilot              = flag.String("autopilot", "", "Autopilot to test (ardupilot or px4)")
-	workloadCmd            = flag.String("workload.cmd", "", "Command of workload (accepts a Go template)")
-	workloadTimeoutSeconds = flag.Uint("workload.timeout", 300, "Timeout of workload (seconds)")
-	inReplay               = flag.Bool("replay", false, "Perform a replay (requires replay.path to be setup)")
-	replayPath             = flag.String("replay.path", "", "Path to a file containing a trace to replay")
-	outputLocation         = flag.String("output", getOutputLocation(), "")
+	rpcAddr                      = flag.String("rpc.addr", getRPCAddr(), "URL of RPC server")
+	autopilot                    = flag.String("autopilot", "", "Autopilot to test (ardupilot or px4)")
+	workloadCmd                  = flag.String("workload.cmd", "", "Command of workload (accepts a Go template)")
+	workloadTimeoutSeconds       = flag.Uint("workload.timeout", 300, "Timeout of workload (seconds)")
+	inReplay                     = flag.Bool("replay", false, "Perform a replay (requires replay.path to be setup)")
+	replayPath                   = flag.String("replay.path", "", "Path to a file containing a trace to replay")
+	outputLocation               = flag.String("output", getOutputLocation(), "")
+	signals                      = make(chan os.Signal, 1)
+	statistics             stats = stats{}
 )
 
 func main() {
 	flag.Parse()
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+	if *inReplay {
+		if *replayPath == "" {
+			fmt.Fprintf(os.Stderr, "error: -replay.path must be specified with -replay.\n")
+			os.Exit(1)
+		} else if info, err := os.Stat(*replayPath); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %s\n", err)
+			os.Exit(1)
+		} else if info.IsDir() {
+			fmt.Fprintf(os.Stderr, "error: %s is not a file\n", *replayPath)
+			os.Exit(1)
+		}
+		performReplay()
+	} else {
+		if _, err := os.Stat(*outputLocation); err != nil {
+			os.Mkdir(*outputLocation, 0777)
+		}
+		performModelChecking()
+	}
+}
 
 	if *inReplay {
 		if *replayPath == "" {
@@ -98,8 +132,22 @@ func performModelChecking() {
 		},
 		ModeChangeHandler: recordModeChanges,
 	}
-	if err = ex.Execute(); err != nil {
-		log.Fatalf("Error executing: %s\n", err)
+
+	log.Println("Performing a dry run...")
+	doneChan := make(chan int)
+	go func() {
+		if err = ex.Execute(); err != nil {
+			log.Fatalf("Error executing: %s\n", err)
+		}
+		doneChan <- 1
+	}()
+
+	select {
+	case <-signals:
+		log.Println("Received signal, exiting")
+		os.Exit(0)
+	case <-doneChan:
+		// do nothing, this is normal
 	}
 
 	doModelChecking(
@@ -203,13 +251,32 @@ func doModelChecking(hinjServer *hinj.HINJServer,
 			Detectors: []detector.Detector{
 				detector.NewTimeoutDetector(time.Duration(*workloadTimeoutSeconds) * time.Second),
 				detector.NewFreeFallDetector(),
+				detector.NewDeviantDetector(positions),
 			},
 			ModeChangeHandler:  recordModeChanges,
 			MissionFailurePlan: nextFailurePlan,
 			OutputLocation:     *outputLocation,
 		}
-		if err := ex.Execute(); err != nil {
-			log.Fatalf("Error executing: %s\n", err)
+		doneChan := make(chan int)
+		go func() {
+			if err := ex.Execute(); err != nil {
+				log.Fatalf("Error executing: %s\n", err)
+			}
+			doneChan <- 1
+		}()
+
+		select {
+		case <-signals:
+			log.Println("Received signal, exiting.")
+			displayStats()
+			os.Exit(0)
+		case <-doneChan:
+			// do nothing, this is normal
+		}
+
+		// update our statistics
+		if !ex.MissionSuccessful {
+			updateStats(nextFailurePlan)
 		}
 
 		// enqeueue the same failures of this run, but with the failure time shifted
@@ -226,11 +293,11 @@ func doModelChecking(hinjServer *hinj.HINJServer,
 			panic(err)
 		} else if !consideredScenarios[hash] {
 			consideredScenarios[hash] = true
+			failurePlans = append(failurePlans, shiftedFailures)
 		} // otherwise, we don't need to consider the shifted scenario
 
 		enqueueScenarios(modeChangeTimes, &failurePlans, consideredScenarios)
 	}
-
 }
 
 // enqueue the new mode changes from this run.
@@ -284,7 +351,7 @@ func scenarioFeasible(scenario []executor.FailurePlan) bool {
 // returns all failures at iteration
 func allFailures(iteration uint64) []executor.FailurePlan {
 	var failures []executor.FailurePlan
-	sensorTypes := []hinj.Sensor{hinj.GPS, hinj.Accelerometer}
+	sensorTypes := []hinj.Sensor{hinj.GPS, hinj.Accelerometer, hinj.Compass, hinj.Gyroscope, hinj.Barometer}
 	for _, sensorType := range sensorTypes {
 		// TODO - probably use a map to store # of instances
 		for instance := uint8(0); instance < uint8(3); instance++ {
@@ -313,10 +380,63 @@ func failurePowerset(failures []executor.FailurePlan) [][]executor.FailurePlan {
 	thePowerSet := failurePowerset(failures[1:])
 	for _, set := range thePowerSet {
 		results = append(results, set)
-		results = append(results, append(set, failures[0]))
+		results = append(results, copyAndAppend(set, failures[0]))
 	}
 
 	return results
+}
+
+// copies and appends
+func copyAndAppend(failures []executor.FailurePlan, item executor.FailurePlan) []executor.FailurePlan {
+	cp := make([]executor.FailurePlan, len(failures))
+	copy(cp, failures)
+	cp = append(cp, item)
+	return cp
+}
+
+// called when a failure is encountered to record relevant statistics
+func updateStats(failurePlan []executor.FailurePlan) {
+	hasGPS, hasBaro, hasAccel, hasCompass, hasGyro := false, false, false, false, false
+	for _, plan := range failurePlan {
+		switch plan.SensorFailure.SensorType {
+		case hinj.GPS:
+			hasGPS = true
+		case hinj.Barometer:
+			hasBaro = true
+		case hinj.Accelerometer:
+			hasAccel = true
+		case hinj.Compass:
+			hasCompass = true
+		case hinj.Gyroscope:
+			hasGyro = true
+		}
+	}
+	if hasGPS {
+		statistics.unsafeFromGPS++
+	}
+	if hasBaro {
+		statistics.unsafeFromAccel++
+	}
+	if hasCompass {
+		statistics.unsafeFromCompass++
+	}
+	if hasAccel {
+		statistics.unsafeFromAccel++
+	}
+	if hasGyro {
+		statistics.unsafeFromGyro++
+	}
+	statistics.totalUnsafe++
+}
+
+func displayStats() {
+	fmt.Println("Stats:")
+	fmt.Printf("    %d total unsafe scenarios\n", statistics.totalUnsafe)
+	fmt.Printf("    %d unsafe scenarios w/ a GPS fault\n", statistics.unsafeFromGPS)
+	fmt.Printf("    %d unsafe scenarios w/ a Baro fault\n", statistics.unsafeFromBaros)
+	fmt.Printf("    %d unsafe scenarios w/ a Accel fault\n", statistics.unsafeFromAccel)
+	fmt.Printf("    %d unsafe scenarios w/ a Compass fault\n", statistics.unsafeFromCompass)
+	fmt.Printf("    %d unsafe scenarios w/ a Gyro fault\n", statistics.unsafeFromGyro)
 }
 
 func getHINJAddr() string {

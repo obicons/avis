@@ -13,6 +13,7 @@ const (
 	FreeFall
 	ProgramFault
 	Timeout
+	Deviation
 )
 
 type Anomaly struct {
@@ -44,6 +45,8 @@ func (k AnomalyKind) String() string {
 		return "Program Fault"
 	case Timeout:
 		return "Timeout"
+	case Deviation:
+		return "Deviation"
 	}
 	return "Unknown anomaly"
 }
