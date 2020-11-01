@@ -69,7 +69,6 @@ func main() {
 		}
 		performModelChecking()
 	}
-}
 
 	if *inReplay {
 		if *replayPath == "" {
