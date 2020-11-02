@@ -1,5 +1,4 @@
 # RMCK
-
 RMCK is the robotic model checker.
 
 ## Building
@@ -22,7 +21,7 @@ Run `make test-unit`.
 Run `make test-functional`.
 
 ### GRPC 
-GRPC is used for the workload to interact with RMCK. To get the needed programs, run:
+GRPC is used for the workload to interact with RMCK. To obtain the needed programs, run:
 ```
 $ go get -u google.golang.org/protobuf/cmd/protoc-gen-go
 $ go install google.golang.org/protobuf/cmd/protoc-gen-go
@@ -31,6 +30,4 @@ $ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 ```
 
 ## TODO
-- Port Python drivers to use new API gateway
-- Reimplement the core checker
 - Metrics server for interesting stats (e.g. # of synthetic readings, etc)
