@@ -50,6 +50,7 @@ var (
 	compassOutputLocation         = flag.String("sensor.compass.output", getSensorOutputLocation("compass"), "")
 	barometerOutputLocation       = flag.String("sensor.barometer.output", getSensorOutputLocation("barometer"), "")
 	modeOutputDirectory           = flag.String("sensor.mode.output", getSensorOutputLocation("mode"), "")
+	positionOutputLocation        = flag.String("sensor.position.output", getSensorOutputLocation("position"), "")
 	signals                       = make(chan os.Signal, 1)
 	statistics              stats = stats{}
 )
@@ -144,6 +145,7 @@ func performModelChecking() {
 			GyroTraceOutput:      *gyroOutputLocation,
 			CompassTraceOutput:   *compassOutputLocation,
 			BarometerTraceOutput: *barometerOutputLocation,
+			PositionTraceOutput:  *positionOutputLocation,
 		},
 	}
 
@@ -274,6 +276,15 @@ func doModelChecking(hinjServer *hinj.HINJServer,
 			ModeChangeHandler:  recordModeChanges,
 			MissionFailurePlan: nextFailurePlan,
 			OutputLocation:     *outputLocation,
+			TraceParameters: entities.SensorTraceParameters{
+				TraceSensors:         *doSensorTrace,
+				AccelTraceOutput:     *accelOutputLocation,
+				GPSTraceOutput:       *gpsOutputLocation,
+				GyroTraceOutput:      *gyroOutputLocation,
+				CompassTraceOutput:   *compassOutputLocation,
+				BarometerTraceOutput: *barometerOutputLocation,
+				PositionTraceOutput:  *positionOutputLocation,
+			},
 		}
 		doneChan := make(chan int)
 		go func() {

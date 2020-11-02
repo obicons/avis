@@ -163,14 +163,14 @@ func (server *HINJServer) work() {
 			log.Printf("HINJServer.work(): error: %s\n", err)
 		}
 
-		server.recordStats(msg)
-
 		server.checkAndFail(msg)
 		err = writer.WriteMessage(msg)
 		if err != nil {
 			log.Printf("HINJServer.work(): error writing: %s\n", err)
 		}
 		conn.Close()
+
+		server.recordStats(msg)
 	}
 	server.shutdownAckChan <- 0
 }

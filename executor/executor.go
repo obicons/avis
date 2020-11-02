@@ -46,6 +46,7 @@ type Executor struct {
 	gpsPackets         map[uint64]hinj.GPSPacket
 	baroPackets        map[uint64]hinj.BarometerPacket
 	compassPackets     map[uint64]hinj.CompassPacket
+	positionData       map[uint64]entities.Position
 	rand               *rand.Rand
 }
 
@@ -172,51 +173,34 @@ func (e *Executor) maybeSaveSensors() {
 		return
 	}
 
-	accelFile, err := os.Create(e.TraceParameters.AccelTraceOutput)
-	if err != nil {
-		log.Printf("unable to create accel trace: %s\n", err)
-		return
+	dataSets := []interface{}{
+		e.accelPackets,
+		e.gpsPackets,
+		e.gyroPackets,
+		e.baroPackets,
+		e.compassPackets,
+		e.positionData,
 	}
-	accelEncoder := json.NewEncoder(accelFile)
-	accelEncoder.Encode(e.accelPackets)
-	accelFile.Close()
-
-	gpsFile, err := os.Create(e.TraceParameters.GPSTraceOutput)
-	if err != nil {
-		log.Printf("unable to create gps trace: %s\n", err)
-		return
+	dataSetFiles := []string{
+		e.TraceParameters.AccelTraceOutput,
+		e.TraceParameters.GPSTraceOutput,
+		e.TraceParameters.GyroTraceOutput,
+		e.TraceParameters.BarometerTraceOutput,
+		e.TraceParameters.CompassTraceOutput,
+		e.TraceParameters.PositionTraceOutput,
 	}
-	gpsEncoder := json.NewEncoder(gpsFile)
-	gpsEncoder.Encode(e.gpsPackets)
-	gpsFile.Close()
 
-	gyroFile, err := os.Create(e.TraceParameters.GyroTraceOutput)
-	if err != nil {
-		log.Printf("unable to create gyro trace: %s\n", err)
-		return
+	for idx, dataSet := range dataSets {
+		outputLocation := dataSetFiles[idx]
+		file, err := os.Create(outputLocation)
+		if err != nil {
+			log.Printf("error creating file: %s\n", err)
+			continue
+		}
+		encoder := json.NewEncoder(file)
+		encoder.Encode(dataSet)
+		file.Close()
 	}
-	gyroEncoder := json.NewEncoder(gyroFile)
-	gyroEncoder.Encode(e.gyroPackets)
-	gyroFile.Close()
-
-	baroFile, err := os.Create(e.TraceParameters.BarometerTraceOutput)
-	if err != nil {
-		log.Printf("unable to create baro trace: %s\n", err)
-		return
-	}
-	baroEncoder := json.NewEncoder(baroFile)
-	baroEncoder.Encode(e.baroPackets)
-	baroFile.Close()
-
-	compassFile, err := os.Create(e.TraceParameters.CompassTraceOutput)
-	if err != nil {
-		log.Printf("unable to create compass trace: %s\n", err)
-		return
-	}
-	compassEncoder := json.NewEncoder(compassFile)
-	compassEncoder.Encode(e.compassPackets)
-	compassFile.Close()
-
 }
 
 func (e *Executor) clearSensors() {
@@ -225,6 +209,7 @@ func (e *Executor) clearSensors() {
 	e.baroPackets = make(map[uint64]hinj.BarometerPacket)
 	e.gpsPackets = make(map[uint64]hinj.GPSPacket)
 	e.compassPackets = make(map[uint64]hinj.CompassPacket)
+	e.positionData = make(map[uint64]entities.Position)
 }
 
 func (e *Executor) sampleSensors() {
@@ -235,6 +220,12 @@ func (e *Executor) sampleSensors() {
 		e.gpsPackets[it] = e.HINJServer.GetLastGPSReading()
 		e.gyroPackets[it] = e.HINJServer.GetLastGyroReading()
 		e.compassPackets[it] = e.HINJServer.GetLastCompassReading()
+		pos, err := e.Simulator.Position(context.Background())
+		if err != nil {
+			log.Printf("sampleSensors(): error sampling position: %s\n", err)
+		} else {
+			e.positionData[it] = pos
+		}
 	}
 }
 

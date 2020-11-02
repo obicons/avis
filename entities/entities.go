@@ -20,4 +20,5 @@ type SensorTraceParameters struct {
 	GyroTraceOutput      string
 	CompassTraceOutput   string
 	BarometerTraceOutput string
+	PositionTraceOutput  string
 }

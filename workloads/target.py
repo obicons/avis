@@ -140,6 +140,7 @@ class RAL(ABC):
             longitude,
             ground_altitude
         )
+        self.change_mode(3)
 
     def upload_mission(self, missions):
         '''uploads the specified mission items'''

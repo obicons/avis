@@ -8,6 +8,7 @@ verify_ssl = true
 [packages]
 grpcio-tools = "*"
 pymavlink = "*"
+pandas = "*"
 
 [requires]
 python_version = "3.7"
