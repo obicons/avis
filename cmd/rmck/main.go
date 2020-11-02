@@ -49,6 +49,7 @@ var (
 	gyroOutputLocation            = flag.String("sensor.gyro.output", getSensorOutputLocation("gyro"), "")
 	compassOutputLocation         = flag.String("sensor.compass.output", getSensorOutputLocation("compass"), "")
 	barometerOutputLocation       = flag.String("sensor.barometer.output", getSensorOutputLocation("barometer"), "")
+	modeOutputDirectory           = flag.String("sensor.mode.output", getSensorOutputLocation("mode"), "")
 	signals                       = make(chan os.Signal, 1)
 	statistics              stats = stats{}
 )
@@ -161,6 +162,10 @@ func performModelChecking() {
 		os.Exit(0)
 	case <-doneChan:
 		// do nothing, this is normal
+	}
+
+	if err := saveModes(modeChangeTimes); err != nil {
+		log.Printf("error saving mode transitions: %s", err)
 	}
 
 	doModelChecking(
@@ -310,6 +315,9 @@ func doModelChecking(hinjServer *hinj.HINJServer,
 		} // otherwise, we don't need to consider the shifted scenario
 
 		enqueueScenarios(modeChangeTimes, &failurePlans, consideredScenarios)
+		if err := saveModes(modeChangeTimes); err != nil {
+			log.Printf("error saving mode transitions: %s", err)
+		}
 	}
 }
 
@@ -532,4 +540,16 @@ func getSensorOutputLocation(sensorName string) string {
 		panic(err)
 	}
 	return path.Join(cwd, fmt.Sprintf("data/%s.json", sensorName))
+}
+
+func saveModes(modeChangeTimes []uint64) error {
+	file, err := os.Create(*modeOutputDirectory)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.Encode(modeChangeTimes)
+	return nil
 }
