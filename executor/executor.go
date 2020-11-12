@@ -38,9 +38,10 @@ type Executor struct {
 	ModeChangeHandler  func(totalIterations uint64, modeNumber int)
 	MissionFailurePlan []FailurePlan
 	OutputLocation     string
-	rpcServer          *controller.SimulatorController
 	MissionSuccessful  bool
 	TraceParameters    entities.SensorTraceParameters
+	REPL               bool
+	rpcServer          *controller.SimulatorController
 	accelPackets       map[uint64]hinj.AccelerometerPacket
 	gyroPackets        map[uint64]hinj.GyroscopePacket
 	gpsPackets         map[uint64]hinj.GPSPacket
@@ -129,11 +130,13 @@ func (e *Executor) Execute() error {
 
 	time.Sleep(time.Second * 10)
 
-	cmd := executeWorkload(e.WorkloadCmd)
-	defer func() {
-		cmd.Process.Kill()
-		cmd.Process.Wait()
-	}()
+	if e.REPL {
+		cmd := executeWorkload(e.WorkloadCmd)
+		defer func() {
+			cmd.Process.Kill()
+			cmd.Process.Wait()
+		}()
+	}
 
 	rpcDone := e.rpcServer.Done()
 	keepGoing := true
