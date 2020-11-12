@@ -49,6 +49,7 @@ var (
 	gyroOutputLocation            = flag.String("sensor.gyro.output", getSensorOutputLocation("gyro"), "")
 	compassOutputLocation         = flag.String("sensor.compass.output", getSensorOutputLocation("compass"), "")
 	barometerOutputLocation       = flag.String("sensor.barometer.output", getSensorOutputLocation("barometer"), "")
+	repl                          = flag.Bool("repl", false, "launch program in REPL mode (does no checking; runs vehicle + hinj)")
 	modeOutputDirectory           = flag.String("sensor.mode.output", getSensorOutputLocation("mode"), "")
 	signals                       = make(chan os.Signal, 1)
 	statistics              stats = stats{}
@@ -70,25 +71,8 @@ func main() {
 			os.Exit(1)
 		}
 		performReplay()
-	} else {
-		if _, err := os.Stat(*outputLocation); err != nil {
-			os.Mkdir(*outputLocation, 0777)
-		}
-		performModelChecking()
-	}
-
-	if *inReplay {
-		if *replayPath == "" {
-			fmt.Fprintf(os.Stderr, "error: -replay.path must be specified with -replay.\n")
-			os.Exit(1)
-		} else if info, err := os.Stat(*replayPath); err != nil {
-			fmt.Fprintf(os.Stderr, "error: %s\n", err)
-			os.Exit(1)
-		} else if info.IsDir() {
-			fmt.Fprintf(os.Stderr, "error: %s is not a file\n", *replayPath)
-			os.Exit(1)
-		}
-		performReplay()
+	} else if *repl {
+		performREPL()
 	} else {
 		if _, err := os.Stat(*outputLocation); err != nil {
 			os.Mkdir(*outputLocation, 0777)
@@ -223,6 +207,42 @@ func performReplay() {
 		},
 		ModeChangeHandler:  func(totalIterations uint64, modeNumber int) {},
 		MissionFailurePlan: failurePlan,
+	}
+	if err = ex.Execute(); err != nil {
+		panic(err)
+	}
+
+}
+
+// launches a REPL
+func performREPL() {
+	system := getAutoPilot(*autopilot)
+	hinj, err := hinj.NewHINJServer(getHINJAddr())
+	if err != nil {
+		log.Fatalf("Could not create a new HINJ server: %s\n", err)
+	}
+
+	config, _ := system.GetGazeboConfig()
+
+	gazebo, err := sim.NewGazeboFromEnv(config)
+	if err != nil {
+		log.Fatalf("Could not get a gazebo instance: %s\n", err)
+	}
+
+	workloadCmd, err := parseWorkloadTemplate(*autopilot, *workloadCmd)
+	if err != nil {
+		log.Fatalf("Could not parse workload command: %s\n", err)
+	}
+
+	ex := executor.Executor{
+		HINJServer:        hinj,
+		Simulator:         gazebo,
+		Autopilot:         system,
+		WorkloadCmd:       workloadCmd,
+		Timeout:           time.Duration(*workloadTimeoutSeconds) * time.Second,
+		RPCAddr:           *rpcAddr,
+		ModeChangeHandler: func(totalIterations uint64, modeNumber int) {},
+		REPL:              true,
 	}
 	if err = ex.Execute(); err != nil {
 		panic(err)
