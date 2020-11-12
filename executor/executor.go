@@ -130,7 +130,7 @@ func (e *Executor) Execute() error {
 
 	time.Sleep(time.Second * 10)
 
-	if e.REPL {
+	if !e.REPL {
 		cmd := executeWorkload(e.WorkloadCmd)
 		defer func() {
 			cmd.Process.Kill()
