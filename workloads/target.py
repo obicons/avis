@@ -141,12 +141,23 @@ class RAL(ABC):
             ground_altitude
         )
 
-    def upload_mission(self, missions):
+    def mission_item_count_send(self, seq, mission_type=0):
+        '''a better wrapper around mav's waypoint_count_send'''
+        if self.mav.mavlink10():
+            self.mav.mav.mission_count_send(
+                self.mav.target_system, self.mav.target_component, seq, mission_type,
+            )
+        else:
+            self.mav.mav.waypoint_count_send(
+                self.mav.target_system, self.mav.target_component, seq, mission_type,
+            )
+
+    def upload_mission(self, missions, mission_type=0):
         '''uploads the specified mission items'''
         req = None
         satisfied = [False] * len(missions)
         while req is None:
-            self.mav.waypoint_count_send(len(missions))
+            self.mission_item_count_send(len(missions), mission_type)
             req = self.mav.recv_match(
                 type='MISSION_REQUEST',
                 blocking=True,
