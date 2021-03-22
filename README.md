@@ -1,5 +1,5 @@
-# RMCK
-RMCK is the robotic model checker.
+# Avis
+Avis is the aerial vehicle in situ model checker.
 
 ## Building
 Just run `make`.

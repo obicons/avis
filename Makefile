@@ -5,12 +5,12 @@ protobufSrcGRPC := $(shell find ./ -name '*.proto' -exec sh -c "echo {} | sed 's
 pythonProtobufSrc := $(shell find ./ -name '*.proto' -exec sh -c 'echo workloads/`basename {}` | sed "s/.proto/_pb2.py/g"' \;)
 pythonProtobufSrcGRPC := $(shell find ./ -name '*.proto' -exec sh -c 'echo workloads/`basename {}` | sed "s/.proto/_pb2_grpc.py/g"' \;)
 
-./bin/rmck: $(gosrc) $(protobufSrcGRPC) $(protobufSrc) $(pythonProtobufSrc) $(pythonProtobufSrcGRPC)
-	go build -o bin ./cmd/rmck 
+./bin/avis: $(gosrc) $(protobufSrcGRPC) $(protobufSrc) $(pythonProtobufSrc) $(pythonProtobufSrcGRPC)
+	go build -o bin ./cmd/avis
 
 clean:
 	go clean -testcache
-	rm -f ./bin/rmck
+	rm -f ./bin/avis
 	rm -f $(protobufSrc)
 	rm -f ./workloads/*pb2*.py
 
