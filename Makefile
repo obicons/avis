@@ -6,7 +6,7 @@ pythonProtobufSrc := $(shell find ./ -name '*.proto' -exec sh -c 'echo workloads
 pythonProtobufSrcGRPC := $(shell find ./ -name '*.proto' -exec sh -c 'echo workloads/`basename {}` | sed "s/.proto/_pb2_grpc.py/g"' \;)
 
 ./bin/avis: $(gosrc) $(protobufSrcGRPC) $(protobufSrc) $(pythonProtobufSrc) $(pythonProtobufSrcGRPC)
-	go build -o bin ./cmd/avis
+	go build -o ./bin/avis ./cmd/avis
 
 clean:
 	go clean -testcache
