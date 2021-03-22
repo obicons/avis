@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/obicons/rmck/util"
+	"github.com/obicons/avis/util"
 )
 
 func TestUnitReadMessageTypeGPS(t *testing.T) {

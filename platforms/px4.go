@@ -8,8 +8,8 @@ import (
 	"path"
 
 	"github.com/creack/pty"
-	"github.com/obicons/rmck/sim"
-	"github.com/obicons/rmck/util"
+	"github.com/obicons/avis/sim"
+	"github.com/obicons/avis/util"
 )
 
 type PX4 struct {

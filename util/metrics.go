@@ -3,7 +3,7 @@ package util
 import (
 	"math"
 
-	"github.com/obicons/rmck/entities"
+	"github.com/obicons/avis/entities"
 )
 
 func Distance(p1, p2 entities.Position) float64 {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/obicons/rmck/entities"
+	"github.com/obicons/avis/entities"
 )
 
 type StepActions func()

@@ -4,7 +4,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/obicons/rmck/entities"
+	"github.com/obicons/avis/entities"
 )
 
 type FreeFallDetector struct {

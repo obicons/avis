@@ -10,8 +10,8 @@ import (
 	"path"
 	"time"
 
-	"github.com/obicons/rmck/sim"
-	"github.com/obicons/rmck/util"
+	"github.com/obicons/avis/sim"
+	"github.com/obicons/avis/util"
 )
 
 type ArduPilot struct {

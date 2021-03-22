@@ -14,12 +14,12 @@ import (
 	"time"
 
 	"github.com/mitchellh/hashstructure"
-	"github.com/obicons/rmck/detector"
-	"github.com/obicons/rmck/entities"
-	"github.com/obicons/rmck/executor"
-	"github.com/obicons/rmck/hinj"
-	"github.com/obicons/rmck/platforms"
-	"github.com/obicons/rmck/sim"
+	"github.com/obicons/avis/detector"
+	"github.com/obicons/avis/entities"
+	"github.com/obicons/avis/executor"
+	"github.com/obicons/avis/hinj"
+	"github.com/obicons/avis/platforms"
+	"github.com/obicons/avis/sim"
 )
 
 type workloadInfo struct {

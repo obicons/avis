@@ -1,7 +1,7 @@
 package detector
 
 import (
-	"github.com/obicons/rmck/entities"
+	"github.com/obicons/avis/entities"
 )
 
 type DetectorProxy struct {

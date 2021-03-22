@@ -3,8 +3,8 @@ package detector
 import (
 	"math/rand"
 
-	"github.com/obicons/rmck/entities"
-	"github.com/obicons/rmck/util"
+	"github.com/obicons/avis/entities"
+	"github.com/obicons/avis/util"
 )
 
 const threshold = 10

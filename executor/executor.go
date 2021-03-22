@@ -12,13 +12,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/obicons/rmck/controller"
-	"github.com/obicons/rmck/detector"
-	"github.com/obicons/rmck/entities"
-	"github.com/obicons/rmck/hinj"
-	"github.com/obicons/rmck/platforms"
-	"github.com/obicons/rmck/sim"
-	"github.com/obicons/rmck/util"
+	"github.com/obicons/avis/controller"
+	"github.com/obicons/avis/detector"
+	"github.com/obicons/avis/entities"
+	"github.com/obicons/avis/hinj"
+	"github.com/obicons/avis/platforms"
+	"github.com/obicons/avis/sim"
+	"github.com/obicons/avis/util"
 )
 
 type FailurePlan struct {

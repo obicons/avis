@@ -3,7 +3,7 @@ package platforms
 import (
 	"context"
 
-	"github.com/obicons/rmck/sim"
+	"github.com/obicons/avis/sim"
 )
 
 type System interface {

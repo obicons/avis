@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/obicons/rmck/util"
+	"github.com/obicons/avis/util"
 )
 
 func TestUnitNewArduPilotFromEnvNoEnvVar(t *testing.T) {

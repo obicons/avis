@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/obicons/rmck/util"
+	"github.com/obicons/avis/util"
 )
 
 func TestUnitReadPosition(t *testing.T) {

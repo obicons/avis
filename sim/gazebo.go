@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/creack/pty"
-	"github.com/obicons/rmck/entities"
-	"github.com/obicons/rmck/util"
+	"github.com/obicons/avis/entities"
+	"github.com/obicons/avis/util"
 )
 
 type Gazebo struct {

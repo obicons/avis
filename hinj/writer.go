@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/obicons/rmck/util"
+	"github.com/obicons/avis/util"
 )
 
 type HINJWriter struct {

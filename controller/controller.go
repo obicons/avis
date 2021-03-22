@@ -6,7 +6,7 @@ import (
 	"net"
 	"net/url"
 
-	"github.com/obicons/rmck/sim"
+	"github.com/obicons/avis/sim"
 	"google.golang.org/grpc"
 )
 

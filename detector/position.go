@@ -3,7 +3,7 @@ package detector
 import (
 	"math/rand"
 
-	"github.com/obicons/rmck/entities"
+	"github.com/obicons/avis/entities"
 )
 
 type PositionRecorder struct {

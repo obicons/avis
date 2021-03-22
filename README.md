@@ -5,12 +5,12 @@ Avis is the aerial vehicle in situ model checker.
 Just run `make`.
 
 ## Running
-Run `bin/rmck`. The following environment variables must be set:
+Run `bin/avis`. The following environment variables must be set:
 - `ARDUPILOT_SRC_PATH` - the path to the source code of ArduPilot
 - `ARDUPILOT_GZ_PATH` - the path to the source code of ArduPilot's Gazebo plugin
 - `PX4_PATH` - the path to the source code of PX4
 
-Optionally, `RMCK_DEBUG` can be set to any value to enable verbose output.
+Optionally, `AVIS_DEBUG` can be set to any value to enable verbose output.
 
 ## Testing
 
